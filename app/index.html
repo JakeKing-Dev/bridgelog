@@ -206,7 +206,7 @@ dialog h2{margin:0;font-size:1.2rem}
   <div class="quick" role="group" aria-label="Quick log">
     <button class="q-incident" data-log="incident"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.4 4.3 4.3 0 0 0 7 18z"/></svg>Incident<small>what happened, before & after</small></button>
     <button class="q-win" data-log="win"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12C12 8.2 9.4 5.5 5 5.5c0 4.2 2.8 6.5 7 6.5z"/><path d="M12 14.5c0-3.3 2.4-5.5 6.5-5.5 0 3.7-2.6 5.5-6.5 5.5z"/></svg>Win<small>a success worth noting</small></button>
-    <button class="q-goal" data-log="goal"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" class="dot"/></svg>Goal data<small>score toward an IEP goal</small></button>
+    <button class="q-goal" data-log="goal"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" class="dot"/></svg>Goal data<small>score toward a goal</small></button>
     <button class="q-time" data-log="time"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.6 2.4"/><path d="M9.5 2.8h5"/><path d="M12 2.8V6"/></svg>Count & time<small>tally, duration, intervals, breaks</small></button>
     <button class="q-care" data-log="care"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.3-7-9.8A3.9 3.9 0 0 1 12 7.8a3.9 3.9 0 0 1 7 2.4C19 15.7 12 20 12 20z"/></svg>Supports<small>prompt levels, care, seizures, emergencies</small></button>
     <button class="q-restore" data-log="restore"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg>Restorative<small>conversation & agreement</small></button>
@@ -303,7 +303,7 @@ async function lockNow(){
   let env; try{ env = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
   if (!env || !env.enc) return;
   if (dlg.open) dlg.close();
-  locked = true; cryptoKey = null; db = {students:[], entries:[], current:null};
+  locked = true; cryptoKey = null; showSupports = null; db = {students:[], entries:[], current:null};
   document.querySelectorAll("section.view").forEach(sec=>sec.replaceChildren());   // drop every rendered record, not just the visible tab
   render(); showLock(env);
 }
@@ -419,10 +419,11 @@ function needStudent(){ if (!stu()){ addStudent(); return true; } return false; 
 function addStudent(){
   const nm = el("input",{id:"f-name",placeholder:"Initials or first name only, e.g. J.M.",required:"",maxlength:"40"});
   const beh = el("input",{id:"f-beh",placeholder:"e.g. leaving seat, hitting, refusal"});
-  const goals = el("textarea",{id:"f-goals",placeholder:"One per line, e.g. Coin identification (80%)"});
-  openForm("Add a student",[field("Name",nm), field("Target behaviors (comma separated)",beh), field("IEP goals to track",goals),
-    el("p",{class:"note"},"Use initials. This app keeps everything on this device, but initials are still the safest habit.")], ()=>{
-      const s={id:uid(), name:nm.value.trim(), behaviors:beh.value.split(",").map(x=>x.trim()).filter(Boolean), goals:goals.value.split("\n").map(x=>x.trim()).filter(Boolean)};
+  const goals = el("textarea",{id:"f-goals",placeholder:"Short names, one per line, e.g. Coin ID (80%)"});
+  const sup = el("input",{id:"f-sup",placeholder:"e.g. break card, first-then board, visual schedule"});
+  openForm("Add a student",[field("Name",nm), field("Target behaviors (comma separated)",beh), field("Goals you take data on",goals), field("Supports you provide (comma separated)",sup),
+    el("p",{class:"note"},"Add only what you need day to day: initials, short goal names and the supports you provide. The full IEP stays with the case manager.")], ()=>{
+      const s={id:uid(), name:nm.value.trim(), behaviors:beh.value.split(",").map(x=>x.trim()).filter(Boolean), goals:goals.value.split("\n").map(x=>x.trim()).filter(Boolean), supports:sup.value.split(",").map(x=>x.trim()).filter(Boolean)};
       if(!s.name) return false; db.students.push(s); db.current=s.id; toast(`Added ${s.name}`);
   });
 }
@@ -482,7 +483,7 @@ function logRestore(existing){
 
 // ---------------- views ----------------
 const COLORS = {incident:"var(--incident)",win:"var(--win)",goal:"var(--goal)",restore:"var(--restore)",count:"var(--accent)",duration:"var(--accent)",interval:"var(--accent)",care:"var(--care)",seizure:"var(--incident)",emergency:"var(--incident)"};
-let filter = "all", showVoided = false;
+let filter = "all", showVoided = false, showSupports = null;   // supports stay hidden on screen until tapped, per student
 function describe(e){
   if (e.type==="incident") return [`${e.behavior}`, [e.activity, e.antecedent&&`Before: ${e.antecedent}`, e.consequence&&`After: ${e.consequence}`, e.intensity&&["","Low","Moderate","High"][e.intensity]+" intensity", e.duration?`${e.duration} min`:null, e.notes].filter(Boolean).join(" · ")];
   if (e.type==="win") return [`Win: ${e.skill||"Success"}`, e.what];
@@ -577,6 +578,14 @@ function vTimeline(){
   if (real && (lb==null || ago>=7)) v.append(el("div",{class:"note",style:"margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"},
     lb==null ? "You haven't backed up yet. If this browser's data is ever cleared, the logs go with it." : `Last backup was ${ago} days ago.`,
     el("button",{type:"button",class:"small",onclick:()=>{ tab="data"; render(); }},"Back up now")));
+  const st=stu(), sups=st.supports||[], open=showSupports===st.id;
+  v.append(el("div",{class:"card",style:"margin-bottom:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px"},
+    el("div",{style:"display:flex;justify-content:space-between;align-items:center;gap:10px"},
+      el("b",{style:"font-weight:500"}, sups.length?`Supports for ${st.name} (${sups.length})`:"Supports"),
+      sups.length ? el("button",{type:"button",class:"small ghost","aria-expanded":String(open),onclick:()=>{ showSupports = open?null:st.id; vTimeline(); }}, open?"Hide":"Show")
+                  : el("button",{type:"button",class:"small ghost",onclick:()=>{ tab="data"; render(); }},"Add")),
+    open ? el("div",{class:"chips"}, ...sups.map(x=>el("span",{class:"chip",style:"cursor:default"},x))) : null,
+    open ? el("p",{style:"margin:0;font-size:.8rem;color:var(--muted)"},"Hidden again when you switch students or the app locks.") : null));
   const now=Date.now(), wk=7*864e5, w1=inRange(all,now-wk,now+1), w0=inRange(all,now-2*wk,now-wk);
   const k=(label,cur,prev,good)=>{ const d=cur-prev; const sign=d>0?"+":""; const better = good? d>=0 : d<=0;
     return el("div",{class:"kpi"}, el("b",{},String(cur)), el("span",{},label), el("div",{class:"delta",style:`color:var(${d===0?"--muted":better?"--win":"--incident"})`}, `${sign}${d} vs last week`)); };
@@ -696,11 +705,11 @@ function vSummary(){
   const copy = el("button",{type:"button",class:"primary",onclick:()=>{ navigator.clipboard.writeText(out.textContent).then(()=>toast("Summary copied"),()=>{ const r=document.createRange(); r.selectNodeContents(out); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Press copy on your device."); }); }},"Copy summary");
   v.append(el("div",{class:"row"}, field("From",from), field("To",to)), el("div",{style:"height:12px"}), out,
     el("div",{class:"actions",style:"margin-top:10px"}, copy),
-    el("div",{class:"card stack",style:"margin-top:14px"}, el("b",{},"IEP progress report"),
-      el("p",{style:"margin:0;color:var(--muted)"},"A printable page for these dates: each goal with its data, a chart and a plain-language sentence, plus behavior data, with space for the case manager's progress marking and comments."),
+    el("div",{class:"card stack",style:"margin-top:14px"}, el("b",{},"Goal data for the case manager"),
+      el("p",{style:"margin:0;color:var(--muted)"},"A printable page for these dates: each goal with its data, a chart and a plain-language sentence, plus behavior data and space for your notes. The case manager uses it to write the IEP progress report."),
       el("div",{class:"row"},
         el("button",{type:"button",class:"primary",onclick:()=>{ const r=range(); if(r) printOrSave(progressHTML(stu(), mine(), r[0], r[1]), null); }},"Print"),
-        el("button",{type:"button",onclick:()=>{ const r=range(); if(r) saveFile(`bridgelog-progress-${(stu().name.replace(/[^A-Za-z0-9]+/g,"")||"student")}-${from.value}-to-${to.value}.html`, progressHTML(stu(), mine(), r[0], r[1]), "text/html").then(ok=>ok&&toast("Saved. Open it in any browser to add comments and print.")); }},"Save as file"))),
+        el("button",{type:"button",onclick:()=>{ const r=range(); if(r) saveFile(`bridgelog-goal-data-${(stu().name.replace(/[^A-Za-z0-9]+/g,"")||"student")}-${from.value}-to-${to.value}.html`, progressHTML(stu(), mine(), r[0], r[1]), "text/html").then(ok=>ok&&toast("Saved. Open it in any browser to add comments and print.")); }},"Save as file"))),
     el("p",{class:"note",style:"margin-top:10px"},"Read it over before sharing. It describes what was logged, so a gap in logging looks like a gap in behavior."));
   go();
 }
@@ -761,7 +770,7 @@ function mergeIn(data){
   for (const st of data.students){
     const mine = db.students.find(x=>x.id===st.id);
     if (!mine){ db.students.push({...st}); r.newStudents++; }
-    else { mine.behaviors=[...new Set([...(mine.behaviors||[]),...(st.behaviors||[])])]; mine.goals=[...new Set([...(mine.goals||[]),...(st.goals||[])])]; }
+    else { mine.supports=[...new Set([...(mine.supports||[]),...(st.supports||[])])]; mine.behaviors=[...new Set([...(mine.behaviors||[]),...(st.behaviors||[])])]; mine.goals=[...new Set([...(mine.goals||[]),...(st.goals||[])])]; }
   }
   for (const e of data.entries){
     const mine = db.entries.find(x=>x.id===e.id);
@@ -945,13 +954,14 @@ function removePasscode(){
 function editStudent(){
   const s=stu(); const beh=el("input",{id:"e-beh",value:s.behaviors.join(", ")}); const goals=el("textarea",{id:"e-goals"}); goals.value=s.goals.join("\n");
   const nm=el("input",{id:"e-name",value:s.name});
+  const sup=el("input",{id:"e-sup",value:(s.supports||[]).join(", ")});
   const rt=el("textarea",{id:"e-routines",placeholder:"Handwashing: Turn on water; Wet hands; Soap; Scrub; Rinse; Dry hands"}); rt.value=(s.routines||[]).map(r=>`${r.name}: ${r.steps.join("; ")}`).join("\n");
   const sz=el("input",{id:"e-seiz",type:"number",min:"1",max:"30",inputmode:"numeric",placeholder:"5",value:s.seizureAlert||""});
-  openForm(`Edit ${s.name}`,[field("Name",nm),field("Target behaviors (comma separated)",beh),field("IEP goals (one per line)",goals),
+  openForm(`Edit ${s.name}`,[field("Name",nm),field("Target behaviors (comma separated)",beh),field("Goals you take data on (short names, one per line)",goals), field("Supports you provide (comma separated)",sup),
     field("Routines for skill steps (one per line: name, colon, steps separated by semicolons)",rt),
     field("Seizure timer alert, in minutes (from the student's seizure action plan, if they have one)",sz)],()=>{
     s.name=nm.value.trim()||s.name; s.behaviors=beh.value.split(",").map(x=>x.trim()).filter(Boolean); s.goals=goals.value.split("\n").map(x=>x.trim()).filter(Boolean);
-    s.routines=parseRoutines(rt.value); const m=Math.round(+sz.value); s.seizureAlert = m>=1&&m<=30 ? m : undefined; toast("Saved"); });
+    s.supports=sup.value.split(",").map(x=>x.trim()).filter(Boolean); s.routines=parseRoutines(rt.value); const m=Math.round(+sz.value); s.seizureAlert = m>=1&&m<=30 ? m : undefined; toast("Saved"); });
 }
 function askClear(){
   const v=$("#v-data"); v.querySelector(".confirm")?.remove();
@@ -969,7 +979,7 @@ function emptyState(){
       el("button",{type:"button",onclick:()=>{ addSample(); render(); }},"Show me an example")));
 }
 function addSample(){
-  const s={id:uid(), name:"Example student", behaviors:["Leaving seat","Shouting out","Refusing work"], goals:["Coin identification (80%)","Asks for a break with card (4/5)"], sample:true};
+  const s={id:uid(), name:"Example student", supports:["Break card","First-then board","Visual schedule","Check-in at transitions"], behaviors:["Leaving seat","Shouting out","Refusing work"], goals:["Coin identification (80%)","Asks for a break with card (4/5)"], sample:true};
   db.students.push(s); db.current=s.id;
   let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
   const pick=a=>a[Math.floor(rnd()*a.length)];
@@ -1453,7 +1463,7 @@ function slopePerWeek(list){ if (list.length<3) return null; const xs=list.map(e
 function progressHTML(s, entries, from, to){
   const cur=inRange(entries, from, to), D=t=>new Date(t).toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"});
   const goals=cur.filter(e=>e.type==="goal"), names=[...new Set([...(s.goals||[]), ...goals.map(g=>g.goal)])];
-  let b=`<h1>IEP goal progress: ${esc(s.name)}</h1><p class="sub">${D(from)} to ${D(to-1)} · prepared ${D(Date.now())}${getMeta().me?` by ${esc(getMeta().me)}`:""}</p>`;
+  let b=`<h1>Goal data summary: ${esc(s.name)}</h1><p class="sub">${D(from)} to ${D(to-1)} · for the case manager · prepared ${D(Date.now())}${getMeta().me?` by ${esc(getMeta().me)}`:""}</p>`;
   for (const n of names){
     const list=goals.filter(g=>g.goal===n).sort((a,c)=>a.t-c.t);
     const tm=n.match(/(\d{1,3})\s*%/), target=tm?Math.min(100,+tm[1]):null;
@@ -1473,7 +1483,7 @@ function progressHTML(s, entries, from, to){
       const steps=list.filter(e=>e.steps?.length);
       if (steps.length){ const L=steps[steps.length-1]; b+=`<table><tr><th>Step</th><th>Latest prompt level (${esc(new Date(L.t).toLocaleDateString(undefined,{month:"short",day:"numeric"}))})</th></tr>${L.steps.map(x=>`<tr><td>${esc(x.s)}</td><td>${esc(x.l?promptName(x.l):"Not scored")}</td></tr>`).join("")}</table>`; }
     }
-    b+=`<p class="marks"><span>☐ Met</span><span>☐ Making progress</span><span>☐ Not yet making progress</span><span>☐ Not yet introduced</span></p><div class="box" contenteditable="true" aria-label="Comments"></div></div>`;
+    b+=`<p class="sub" style="margin:10px 0 0">Notes for the case manager</p><div class="box" contenteditable="true" aria-label="Notes for the case manager"></div></div>`;
   }
   const extra=moreSummary(cur), inc=cur.filter(e=>e.type==="incident"), wins=cur.filter(e=>e.type==="win");
   if (extra.length || inc.length || wins.length){
@@ -1484,8 +1494,8 @@ function progressHTML(s, entries, from, to){
     }
     b+=extra.map(x=>`<p>${esc(x)}</p>`).join("")+`</div>`;
   }
-  b+=`<p class="foot">Prepared from BridgeLog records kept on a school device. Figures reflect what was logged: a day with no entries is a gap in logging, not necessarily in behavior. Progress markings and comments are made by the case manager.</p>`;
-  return pageHTML(`IEP progress, ${s.name}`, b);
+  b+=`<p class="foot">Prepared from BridgeLog records kept on a school device. Figures reflect what was logged: a day with no entries is a gap in logging, not necessarily in behavior. It contains only logged data, not the IEP itself.</p>`;
+  return pageHTML(`Goal data summary, ${s.name}`, b);
 }
 function berHTML(e){
   const s=db.students.find(x=>x.id===e.student)||{name:""}, f=e.followups||{};
@@ -1513,7 +1523,7 @@ function render(){
   views[tab]();
   renderRunning();
 }
-$("#student").addEventListener("change", e=>{ db.current=e.target.value; save(); render(); });
+$("#student").addEventListener("change", e=>{ db.current=e.target.value; showSupports=null; save(); render(); });
 $("#addStudentBtn").addEventListener("click", addStudent);
 document.querySelectorAll("[data-log]").forEach(b=>b.addEventListener("click",()=>({incident:logIncident,win:logWin,goal:logGoal,restore:()=>logRestore(),time:openTimers,care:openSupports})[b.dataset.log]()));
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{ tab=b.dataset.tab; render(); }));
