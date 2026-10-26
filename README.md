@@ -4,7 +4,7 @@ A phone-first behavior log for special education, built by a paraprofessional.
 
 **Live:** https://jakeking-dev.github.io/bridgelog/ · **App:** https://jakeking-dev.github.io/bridgelog/app/
 
-Log tough moments (with what happened before and after), wins, IEP goal data and
+Log tough moments (with what happened before and after), wins, goal data and
 restorative conversations on one timeline per student. See the month as a
 calendar of school days, spot patterns for the team, and get a plain-English
 summary for parent calls and IEP meetings.
