@@ -101,6 +101,8 @@ code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius
     <li>Entries lock at the end of the day they're entered. After that they can't be edited or deleted.</li>
     <li>A mistake can be voided on the same day, with a required reason. Voided entries are kept and marked.</li>
     <li>Later information is added as dated notes, and the original stays as it was.</li>
+    <li>Every entry carries a SHA-256 fingerprint linked to the entry before it. BridgeLog checks the chain each time it opens and names any past record that was changed, deleted or reordered outside the app. Records removed on purpose (archived students) keep their place in the chain with the date and reason.</li>
+    <li>Printed goal data summaries and emergency reports carry a code from that chain, so a printout can later be checked against the device's records.</li>
     <li>Record check compares the device against any backup file and lists any record that is missing or was changed after it locked.</li>
   </ul>
 
