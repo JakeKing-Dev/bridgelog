@@ -563,7 +563,18 @@ function describeProblem(p){
   const [head]=describe(p.e);
   return p.kind==="changed" ? `Changed after it locked: ${head} (${day(p.e)}).` : `Out of order: ${head} (${day(p.e)}).`;
 }
-async function checkChainOnOpen(){ try{ chainState = await verifyChain(); if (!chainState.ok) render(); }catch(e){ chainState=null; } }
+// The example student used to come with two preset goals. Remove them (and their example scores) from devices that still have them.
+const OLD_EXAMPLE_GOALS = ["Coin identification (80%)","Asks for a break with card (4/5)"];
+function tidyExample(){
+  let changed=false;
+  for (const st of db.students.filter(x=>x.sample)){
+    if ((st.goals||[]).some(g=>OLD_EXAMPLE_GOALS.includes(g))){ st.goals=st.goals.filter(g=>!OLD_EXAMPLE_GOALS.includes(g)); changed=true; }
+    const old=db.entries.filter(e=>e.student===st.id && e.type==="goal" && OLD_EXAMPLE_GOALS.includes(e.goal));
+    if (old.length){ chainRemove(old, "Example goals removed"); const ids=new Set(old.map(e=>e.id)); db.entries=db.entries.filter(e=>!ids.has(e.id)); changed=true; }
+  }
+  if (changed) save();
+}
+async function checkChainOnOpen(){ try{ tidyExample(); chainState = await verifyChain(); if (!chainState.ok) render(); }catch(e){ chainState=null; } }
 
 // ---------------- views ----------------
 const COLORS = {incident:"var(--incident)",win:"var(--win)",goal:"var(--goal)",restore:"var(--restore)",count:"var(--accent)",duration:"var(--accent)",interval:"var(--accent)",care:"var(--care)",seizure:"var(--incident)",emergency:"var(--incident)"};
@@ -1090,7 +1101,7 @@ function emptyState(){
       el("button",{type:"button",onclick:()=>{ addSample(); render(); }},"Show me an example")));
 }
 function addSample(){
-  const s={id:uid(), name:"Example student", supports:["Break card","First-then board","Visual schedule","Check-in at transitions"], behaviors:["Leaving seat","Shouting out","Refusing work"], goals:["Coin identification (80%)","Asks for a break with card (4/5)"], sample:true};
+  const s={id:uid(), name:"Example student", supports:["Break card","First-then board","Visual schedule","Check-in at transitions"], behaviors:["Leaving seat","Shouting out","Refusing work"], goals:[], sample:true};
   db.students.push(s); db.current=s.id;
   let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
   const pick=a=>a[Math.floor(rnd()*a.length)];
@@ -1106,7 +1117,6 @@ function addSample(){
         antecedent:ant,consequence:con,intensity:rnd()<0.12?3:rnd()<0.4?2:1,duration:Math.round(1+rnd()*8),notes:""});
     }
     const nWin=Math.round(rnd()*2+(1-decline)*2); for(let i=0;i<nWin;i++) db.entries.push({id:uid(),student:s.id,type:"win",t:day.getTime()+(9+rnd()*6)*36e5,skill:pick(WIN_SKILLS),what:""});
-    if (day.getDay()%2===1) db.entries.push({id:uid(),student:s.id,type:"goal",t:day.getTime()+10.5*36e5,goal:s.goals[0],score:Math.min(100,Math.round(30+(1-decline)*40+rnd()*10)),notes:""});
   }
   s.routines=[{name:"Handwashing", steps:["Turn on water","Wet hands","Get soap","Scrub for 20 seconds","Rinse","Turn off water","Dry hands"]}];
   const LV=["FP","PP","M","V","G","I"];
