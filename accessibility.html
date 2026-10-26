@@ -61,7 +61,7 @@ code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius
   <ul>
     <li>Light and dark modes that follow the device setting, with text contrast checked against WCAG AA in both.</li>
     <li>Large tap targets for logging in the middle of a lesson.</li>
-    <li>Every button and form field has a text name for screen readers, and every image has a text description.</li>
+    <li>Buttons and form fields have text names for screen readers, and images have text descriptions.</li>
     <li>Pages reflow on a phone and work with browser zoom.</li>
     <li>Lexend, a typeface designed for readability.</li>
     <li>Timers can chime as well as show on screen.</li>
@@ -74,6 +74,9 @@ code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius
   <h2>Known gaps</h2>
   <ul>
     <li>The four-week calendar and pattern views are visual summaries. The same information is in the timeline and written summaries, which work with screen readers.</li>
+    <li>The tabs are buttons rather than full tab controls, so screen readers don't announce them as tabs and arrow keys don't move between them.</li>
+    <li>Some small controls, like prompt-level chips and a few buttons on the Data tab, are under the recommended 44-pixel tap size.</li>
+    <li>Prompt-level chips show short codes (I, G, V) while their accessible names are the full words, which can confuse voice control.</li>
   </ul>
 
   <h2>Report a problem</h2>

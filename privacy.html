@@ -83,17 +83,19 @@ code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius
   <ul>
     <li>BridgeLog is a static web page hosted on GitHub Pages. Opening it downloads the app's own code from GitHub. Like any web host, GitHub can see the device's IP address. It never sees student data, which is never sent.</li>
     <li>After the first visit the app runs offline. A service worker keeps a copy of the app's files, and only its files.</li>
-    <li>The page carries a Content Security Policy that limits network connections to the app's own files, blocks outside scripts and form submissions, and allows no external fonts or images. The browser enforces this.</li>
+    <li>The page carries a Content Security Policy that blocks connections to any other site, outside scripts and form submissions, and external fonts or images. The browser enforces this.</li>
     <li>There are no analytics, ads, cookies, trackers or third-party code. Fonts are served with the app.</li>
+    <li>The app currently shares its web address (jakeking-dev.github.io) with the developer's other small public pages. Browsers keep stored data per address, so those pages could technically read unencrypted BridgeLog data on the same device. They contain no code that does. Turning on the passcode keeps the logs encrypted regardless, and a separate address for BridgeLog is planned before school licenses begin.</li>
   </ul>
   <p>IT staff can confirm this by opening the browser's developer tools, logging an entry and checking the Network tab.</p>
 
   <h2>Encryption and access</h2>
   <ul>
-    <li>An optional passcode encrypts everything stored on the device using AES-256-GCM, with the key derived from the passcode through PBKDF2-SHA-256 at 210,000 iterations. Encrypted backups use the same protection.</li>
-    <li>With a passcode set, the app locks itself after a few minutes without use (staff choose how long). It doesn't lock automatically while a timer, such as a seizure timer, is running.</li>
+    <li>An optional passcode encrypts all student records stored on the device (students, entries and the removal log) using AES-256-GCM, with the key derived from the passcode through PBKDF2-SHA-256 at 210,000 iterations. Encrypted backups use the same protection.</li>
+    <li>With a passcode set, the app locks itself after a few minutes without use (staff choose how long). It doesn't lock automatically while a seizure or break timer is running, so those stay on screen.</li>
     <li>A forgotten passcode can't be recovered by anyone, including the developer.</li>
-    <li>Without a passcode, the data is protected only by the device's own sign-in. We recommend a passcode on any shared or portable device.</li>
+    <li>A few settings stay unencrypted so the app can work before it's unlocked: lock time, last backup date, the staff member's initials, and dates and counts of removals, restores and deletions (no student names).</li>
+    <li>Without a passcode, the data is protected only by the device's own sign-in. We recommend school-managed devices, and a passcode on any shared or portable device.</li>
   </ul>
 
   <h2>Record integrity</h2>
@@ -111,7 +113,7 @@ code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius
 
   <h2>Student privacy laws</h2>
   <p><b style="font-weight:500">FERPA.</b> Records staff create in BridgeLog are kept by the school, on school devices. No student information is disclosed to BridgeLog or its developer, because none is ever sent.</p>
-  <p><b style="font-weight:500">California.</b> BridgeLog collects no student information. That means there is nothing for it to sell, use for advertising or build profiles from, which are the concerns addressed by the Student Online Personal Information Protection Act (SOPIPA) and Education Code 49073.1.</p>
+  <p><b style="font-weight:500">California.</b> The developer receives no student information: staff enter records on their own device and they stay there. That means there is nothing for it to sell, use for advertising or build profiles from, which are the concerns addressed by the Student Online Personal Information Protection Act (SOPIPA) and Education Code 49073.1.</p>
   <p>If your district requires a data privacy agreement, such as the California Student Data Privacy Agreement, contact us and we'll complete it. This sheet describes how the software works and isn't legal advice. Your district should make its own determination.</p>
 
   <h2>Review the code</h2>
@@ -120,7 +122,7 @@ code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius
   <h2>Contact</h2>
   <p>Jacob King, maker of BridgeLog · <a href="mailto:jacobnotjoking@gmail.com">jacobnotjoking@gmail.com</a></p>
 
-  <p class="foot">BridgeLog's seizure and emergency features are record-keeping tools. Staff follow each student's seizure action plan, behavior plan and district procedures.</p>
+  <p class="foot">BridgeLog's seizure and emergency features are record-keeping tools. Staff follow each student's seizure action plan, behavior plan and district procedures. The emergency intervention report helps staff record what happened; it doesn't replace the district's own behavioral emergency report form.</p>
 </main>
 <script>
 document.getElementById("printBtn").addEventListener("click", () => window.print());
