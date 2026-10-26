@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BridgeLog Privacy Fact Sheet</title>
+<meta name="description" content="How BridgeLog handles student data: no servers, no accounts, nothing sent over the internet. For principals, district IT and data privacy reviewers.">
+<meta name="theme-color" content="#5b6fa8">
+<link rel="icon" href="app/icon-192.png">
+<style>
+@font-face{font-family:"Lexend";font-weight:300;font-display:swap;src:url("app/fonts/Lexend-Light.woff") format("woff")}
+@font-face{font-family:"Lexend";font-weight:400;font-display:swap;src:url("app/fonts/Lexend-Regular.woff") format("woff")}
+@font-face{font-family:"Lexend";font-weight:500;font-display:swap;src:url("app/fonts/Lexend-Medium.woff") format("woff")}
+/* Layout: a single readable column that prints on two pages; short sections a reviewer can scan. */
+:root{--bg:#f1f4f0;--surface:#fbfcf9;--ink:#2e3a3a;--muted:#5f6c6b;--line:#dde4de;--accent:#5b6fa8;--accent-soft:#e6e9f4;--win:#4f8a63;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c2228;--surface:#242b32;--ink:#e3e7e4;--muted:#a3aeac;--line:#353e46;--accent:#9fb0e0;--accent-soft:#2c3446;--win:#97c9a4;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c2228;--surface:#242b32;--ink:#e3e7e4;--muted:#a3aeac;--line:#353e46;--accent:#9fb0e0;--accent-soft:#2c3446;--win:#97c9a4;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:300 16px/1.6 "Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+main{max-width:780px;margin:0 auto;padding:28px 0 56px}
+a{color:var(--accent)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:500;font-size:1.15rem;color:var(--accent);text-decoration:none}
+.brand svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:500 .9rem "Lexend",system-ui,sans-serif;text-decoration:none;padding:9px 16px;border-radius:999px;border:1.5px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer}
+h1{font-weight:500;font-size:clamp(1.7rem,5vw,2.3rem);line-height:1.15;margin:0}
+.sub{color:var(--muted);margin:8px 0 0}
+.short{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--win);border-radius:14px;padding:16px 18px;margin:22px 0 6px}
+.short b{font-weight:500}
+h2{font-weight:500;font-size:1.12rem;margin:28px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+p{margin:0 0 10px}
+ul{margin:0 0 10px;padding-left:20px} li{margin:4px 0}
+table{border-collapse:collapse;width:100%;margin:6px 0 10px;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-weight:500}
+code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.foot{margin-top:28px;font-size:.85rem;color:var(--muted)}
+@media print{
+  body{background:#fff;color:#1f2a2a;font-size:11.5pt;padding:0}
+  main{padding:0;max-width:none}
+  .actions{display:none}
+  h2{break-after:avoid} table,.short{break-inside:avoid}
+  a{color:#1f2a2a;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <a class="brand" href="./"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg>BridgeLog</a>
+    <div class="actions"><a class="btn" href="privacy.pdf" download>Download PDF</a><button class="btn" type="button" id="printBtn">Print</button></div>
+  </div>
+
+  <h1>Privacy and security fact sheet</h1>
+  <p class="sub">For principals, district IT and data privacy reviewers · Updated October 2026</p>
+
+  <div class="short"><b>The short version.</b> BridgeLog has no servers, no accounts and no database. Student records are created and kept only in the web browser on the device a staff member uses. The developer never receives, stores or can see any student information.</div>
+
+  <h2>What BridgeLog stores, and where</h2>
+  <p>Everything is kept in the browser's local storage on that one device:</p>
+  <ul>
+    <li>Students, by initials or first name (the app asks for initials), with their target behaviors, IEP goal names and routine steps.</li>
+    <li>Entries staff log: incidents, wins, goal scores and prompt levels, counts and timers, care notes, seizure logs, emergency intervention reports and restorative conversations.</li>
+    <li>Settings: auto-lock time, date of the last backup, and the staff member's initials.</li>
+  </ul>
+  <p>Nothing is stored anywhere else unless a staff member chooses to save a file.</p>
+
+  <h2>What can leave the device</h2>
+  <p>Nothing leaves automatically. Files leave only when a staff member saves one:</p>
+  <table>
+    <tr><th>File</th><th>Encrypted?</th><th>Purpose</th></tr>
+    <tr><td>Backup</td><td>Yes, when a passcode is set</td><td>Restoring the log on the same or another device</td></tr>
+    <tr><td>Share file for a teammate</td><td>Always, with its own passcode</td><td>Giving one student's log to a teacher or case manager</td></tr>
+    <tr><td>Spreadsheet export (CSV)</td><td>No</td><td>Records, reporting and analysis</td></tr>
+    <tr><td>IEP progress report and emergency report printouts</td><td>No</td><td>Meetings and the student's file</td></tr>
+  </table>
+  <p>Staff should store and send these files the way the district handles other student records, for example on district drives and through district email. The app tells staff to give a share passcode in person, not in the same message as the file.</p>
+
+  <h2>Network activity</h2>
+  <ul>
+    <li>BridgeLog is a static web page hosted on GitHub Pages. Opening it downloads the app's own code from GitHub. Like any web host, GitHub can see the device's IP address. It never sees student data, which is never sent.</li>
+    <li>After the first visit the app runs offline. A service worker keeps a copy of the app's files, and only its files.</li>
+    <li>The page carries a Content Security Policy that limits network connections to the app's own files, blocks outside scripts and form submissions, and allows no external fonts or images. The browser enforces this.</li>
+    <li>There are no analytics, ads, cookies, trackers or third-party code. Fonts are served with the app.</li>
+  </ul>
+  <p>IT staff can confirm this by opening the browser's developer tools, logging an entry and checking the Network tab.</p>
+
+  <h2>Encryption and access</h2>
+  <ul>
+    <li>An optional passcode encrypts everything stored on the device using AES-256-GCM, with the key derived from the passcode through PBKDF2-SHA-256 at 210,000 iterations. Encrypted backups use the same protection.</li>
+    <li>With a passcode set, the app locks itself after a few minutes without use (staff choose how long). It doesn't lock automatically while a timer, such as a seizure timer, is running.</li>
+    <li>A forgotten passcode can't be recovered by anyone, including the developer.</li>
+    <li>Without a passcode, the data is protected only by the device's own sign-in. We recommend a passcode on any shared or portable device.</li>
+  </ul>
+
+  <h2>Record integrity</h2>
+  <ul>
+    <li>Entries lock at the end of the day they're entered. After that they can't be edited or deleted.</li>
+    <li>A mistake can be voided on the same day, with a required reason. Voided entries are kept and marked.</li>
+    <li>Later information is added as dated notes, and the original stays as it was.</li>
+    <li>Record check compares the device against any backup file and lists any record that is missing or was changed after it locked.</li>
+  </ul>
+
+  <h2>Retention and removal</h2>
+  <p>BridgeLog never deletes records on its own, because the district sets how long they are kept. When it's time, "Archive and remove" saves a spreadsheet and a BridgeLog file for one student, asks staff to confirm the archive is where the school keeps records, then removes only that student from the device. A removal log keeps the date, the number of entries removed and where the archive went.</p>
+
+  <h2>Student privacy laws</h2>
+  <p><b style="font-weight:500">FERPA.</b> Records staff create in BridgeLog are kept by the school, on school devices. No student information is disclosed to BridgeLog or its developer, because none is ever sent.</p>
+  <p><b style="font-weight:500">California.</b> BridgeLog collects no student information. That means there is nothing for it to sell, use for advertising or build profiles from, which are the concerns addressed by the Student Online Personal Information Protection Act (SOPIPA) and Education Code 49073.1.</p>
+  <p>If your district requires a data privacy agreement, such as the California Student Data Privacy Agreement, contact us and we'll complete it. This sheet describes how the software works and isn't legal advice. Your district should make its own determination.</p>
+
+  <h2>Review the code</h2>
+  <p>The full source is public at <a href="https://github.com/JakeKing-Dev/bridgelog">github.com/JakeKing-Dev/bridgelog</a>, so your IT staff can read exactly what the app does.</p>
+
+  <h2>Contact</h2>
+  <p>Jacob King, maker of BridgeLog · <a href="mailto:jacobnotjoking@gmail.com">jacobnotjoking@gmail.com</a></p>
+
+  <p class="foot">BridgeLog's seizure and emergency features are record-keeping tools. Staff follow each student's seizure action plan, behavior plan and district procedures.</p>
+</main>
+<script>
+document.getElementById("printBtn").addEventListener("click", () => window.print());
+</script>
+</body>
+</html>
