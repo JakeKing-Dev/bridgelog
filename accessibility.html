@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BridgeLog Accessibility</title>
+<meta name="description" content="How accessible BridgeLog is, what has been checked, known gaps and how to report a problem.">
+<meta name="theme-color" content="#5b6fa8">
+<link rel="icon" href="app/icon-192.png">
+<style>
+@font-face{font-family:"Lexend";font-weight:300;font-display:swap;src:url("app/fonts/Lexend-Light.woff") format("woff")}
+@font-face{font-family:"Lexend";font-weight:400;font-display:swap;src:url("app/fonts/Lexend-Regular.woff") format("woff")}
+@font-face{font-family:"Lexend";font-weight:500;font-display:swap;src:url("app/fonts/Lexend-Medium.woff") format("woff")}
+/* Layout: a single readable column that prints on two pages; short sections a reviewer can scan. */
+:root{--bg:#f1f4f0;--surface:#fbfcf9;--ink:#2e3a3a;--muted:#64706f;--line:#dde4de;--accent:#53669c;--accent-soft:#e6e9f4;--win:#427353;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c2228;--surface:#242b32;--ink:#e3e7e4;--muted:#a3aeac;--line:#353e46;--accent:#9fb0e0;--accent-soft:#2c3446;--win:#97c9a4;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c2228;--surface:#242b32;--ink:#e3e7e4;--muted:#a3aeac;--line:#353e46;--accent:#9fb0e0;--accent-soft:#2c3446;--win:#97c9a4;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:300 16px/1.6 "Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+main{max-width:780px;margin:0 auto;padding:28px 0 56px}
+a{color:var(--accent)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:500;font-size:1.15rem;color:var(--accent);text-decoration:none}
+.brand svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:500 .9rem "Lexend",system-ui,sans-serif;text-decoration:none;padding:9px 16px;border-radius:999px;border:1.5px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer}
+h1{font-weight:500;font-size:clamp(1.7rem,5vw,2.3rem);line-height:1.15;margin:0}
+.sub{color:var(--muted);margin:8px 0 0}
+.short{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--win);border-radius:14px;padding:16px 18px;margin:22px 0 6px}
+.short b{font-weight:500}
+h2{font-weight:500;font-size:1.12rem;margin:28px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+p{margin:0 0 10px}
+ul{margin:0 0 10px;padding-left:20px} li{margin:4px 0}
+table{border-collapse:collapse;width:100%;margin:6px 0 10px;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-weight:500}
+code{font-size:.85em;background:var(--accent-soft);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.foot{margin-top:28px;font-size:.85rem;color:var(--muted)}
+@media print{
+  body{background:#fff;color:#1f2a2a;font-size:11.5pt;padding:0}
+  main{padding:0;max-width:none}
+  .actions{display:none}
+  h2{break-after:avoid} table,.short{break-inside:avoid}
+  a{color:#1f2a2a;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <a class="brand" href="./"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg>BridgeLog</a>
+  </div>
+
+  <h1>Accessibility</h1>
+  <p class="sub">Updated October 2026</p>
+
+  <div class="short"><b>The goal.</b> BridgeLog aims to meet the Web Content Accessibility Guidelines (WCAG) 2.1 at level AA, so staff who use screen readers, larger text, keyboards or high contrast can log as quickly as anyone else.</div>
+
+  <h2>What's built in</h2>
+  <ul>
+    <li>Light and dark modes that follow the device setting, with text contrast checked against WCAG AA in both.</li>
+    <li>Large tap targets for logging in the middle of a lesson.</li>
+    <li>Every button and form field has a text name for screen readers, and every image has a text description.</li>
+    <li>Pages reflow on a phone and work with browser zoom.</li>
+    <li>Lexend, a typeface designed for readability.</li>
+    <li>Timers can chime as well as show on screen.</li>
+  </ul>
+
+  <h2>What's been checked</h2>
+  <p>In October 2026, the app, this site and the privacy fact sheet were checked automatically for text contrast in light and dark mode, unlabeled buttons and fields, images without descriptions and page language. Problems found were fixed, and all pages passed those checks.</p>
+  <p>Automated checks catch only part of what matters. BridgeLog hasn't yet had a full manual review or been tested by screen-reader users, so there may be gaps we don't know about.</p>
+
+  <h2>Known gaps</h2>
+  <ul>
+    <li>The four-week calendar and pattern views are visual summaries. The same information is in the timeline and written summaries, which work with screen readers.</li>
+  </ul>
+
+  <h2>Report a problem</h2>
+  <p>If something in BridgeLog is hard to use with your device, setup or assistive technology, please email and say what you were trying to do. Accessibility problems are a priority.</p>
+
+  <h2>Contact</h2>
+  <p>Jacob King, maker of BridgeLog · <a href="mailto:jacobnotjoking@gmail.com">jacobnotjoking@gmail.com</a></p>
+  <p class="foot"><a href="./">BridgeLog</a> · <a href="privacy.html">Privacy fact sheet</a> · <a href="terms.html">Terms</a> · <a href="accessibility.html">Accessibility</a></p>
+</main>
+</body>
+</html>
