@@ -1005,7 +1005,7 @@ function addSample(){
       db.entries.push({id:uid(),student:s.id,type:"count",t:st,end:st+30*60e3,behavior:"Shouting out",count:n,taps}); }
     if (day.getDay()===2||day.getDay()===4){ const k=10, marks=[...Array(k)].map(()=>rnd()<0.35+prog*0.45), yes=marks.filter(Boolean).length;
       db.entries.push({id:uid(),student:s.id,type:"interval",t:day.getTime()+13.1*36e5,behavior:"On task",method:"whole",sec:60,total:k,marks,scored:k,yes,pct:pct(yes,k)}); }
-    if (day.getDay()===1||day.getDay()===3||day.getDay()===5){ const steps=s.routines[0].steps.map((x,i)=>({s:x,l:LV[Math.max(0,Math.min(5,Math.round(1.6+prog*3.8+(i<2?1:0)-rnd()*1.5)))]}));
+    if (day.getDay()===1||day.getDay()===3||day.getDay()===5){ const steps=s.routines[0].steps.map((x,i)=>({s:x,l:LV[Math.max(0,Math.min(5,Math.round(2.4+prog*3.2+(i<2?1:0)-rnd()*1.5)))]}));
       db.entries.push({id:uid(),student:s.id,type:"goal",t:day.getTime()+11.6*36e5,goal:"Handwashing (skill steps)",score:pct(steps.filter(x=>x.l==="I").length,steps.length),steps,notes:""});
       db.entries.push({id:uid(),student:s.id,type:"care",t:day.getTime()+10*36e5,care:"Toileting",detail:rnd()<0.35+prog*0.4?"Voided in toilet":pick(["Dry","Wet"]),detail2:rnd()<0.2+prog*0.3?"Student asked":"Scheduled",notes:""}); }
   }
