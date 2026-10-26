@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Phone-first behavior log for special education: tough moments, wins, IEP goal data and restorative conversations on one timeline. Nothing leaves your device.">
+<meta name="theme-color" content="#5b6fa8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BridgeLog">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>BridgeLog</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: phone-first app shell. Student bar on top, one view at a time, quick-log buttons always one tap away. */
+/* Calm, low-glare palette: soft sage ground, muted lavender-blue accent, clay (not alarm red) for incidents. */
+:root{
+  --bg:#f1f4f0; --surface:#fbfcf9; --ink:#2e3a3a; --muted:#6b7877; --line:#dde4de;
+  --accent:#5b6fa8; --accent-ink:#fbfcf9; --accent-soft:#e6e9f4;
+  --incident:#b06a4f; --incident-soft:#f4e6de; --win:#4f8a63; --win-soft:#e3efe4;
+  --goal:#4f7fa6; --goal-soft:#e2ecf3; --restore:#8a6fa8; --restore-soft:#eee7f4;
+  --font:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Lexend",system-ui,sans-serif;
+  --r:16px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1c2228; --surface:#242b32; --ink:#e3e7e4; --muted:#a3aeac; --line:#353e46;
+  --accent:#9fb0e0; --accent-ink:#1c2228; --accent-soft:#2c3446;
+  --incident:#e0a48b; --incident-soft:#3d2f2a; --win:#97c9a4; --win-soft:#26362c;
+  --goal:#96bddb; --goal-soft:#26333e; --restore:#c3acdf; --restore-soft:#332c3d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c2228; --surface:#242b32; --ink:#e3e7e4; --muted:#a3aeac; --line:#353e46;
+  --accent:#9fb0e0; --accent-ink:#1c2228; --accent-soft:#2c3446;
+  --incident:#e0a48b; --incident-soft:#3d2f2a; --win:#97c9a4; --win-soft:#26362c;
+  --goal:#96bddb; --goal-soft:#26333e; --restore:#c3acdf; --restore-soft:#332c3d; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:300 16.5px/1.6 var(--font);letter-spacing:.005em}
+.wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 96px}
+header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-size:1.45rem;font-weight:600;color:var(--accent)}
+.brand span{font-size:.8rem;color:var(--muted)}
+.local{font:500 .72rem var(--mono);color:var(--accent);background:var(--accent-soft);padding:4px 8px;border-radius:999px}
+.studentbar{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+select,input,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;width:100%}
+textarea{min-height:64px;resize:vertical}
+select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.studentbar select{font-weight:700}
+button{font:500 .95rem var(--font);border-radius:var(--r);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent}
+button.small{padding:6px 10px;font-size:.82rem}
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.quick button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:16px;border-width:0;text-align:left;border-radius:20px}
+.quick button small{font-weight:400;font-size:.78rem;opacity:.85}
+.ic,.logo{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic{width:30px;height:30px;margin-bottom:6px}
+.ic .dot{fill:currentColor}
+.logo{width:28px;height:28px;color:var(--accent);align-self:center;stroke-width:2}
+.brand{align-items:center}
+.q-incident{background:var(--incident-soft);color:var(--incident)}
+.q-win{background:var(--win-soft);color:var(--win)}
+.q-goal{background:var(--goal-soft);color:var(--goal)}
+.q-restore{background:var(--restore-soft);color:var(--restore)}
+nav.tabs{display:flex;gap:4px;margin-top:18px;border-bottom:1.5px solid var(--line);overflow-x:auto}
+nav.tabs button{border:0;border-radius:8px 8px 0 0;background:transparent;color:var(--muted);padding:10px 14px;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+section.view{padding-top:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row > *{flex:1 1 160px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px}
+.kpi b{display:block;font:400 1.7rem var(--mono);font-variant-numeric:tabular-nums}
+.kpi span{font-size:.8rem;color:var(--muted)}
+.kpi .delta{font:500 .75rem var(--mono)}
+.day{margin-top:14px}
+.day h3{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.entry{display:grid;grid-template-columns:6px minmax(0,1fr) auto;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:8px}
+.entry .stripe{border-radius:4px}
+.entry .t{font:500 .78rem var(--mono);color:var(--muted)}
+.entry p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+.entry .head{font-weight:500}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:.84rem;border:1.5px solid var(--line);border-radius:999px;padding:7px 12px;background:var(--surface);cursor:pointer;font-weight:400}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:500}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:.84rem;font-weight:500;color:var(--muted)}
+.bar{height:10px;border-radius:5px;background:var(--accent-soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bars .lab{display:flex;justify-content:space-between;font-size:.88rem}
+.bars .lab span{font:500 .82rem var(--mono);color:var(--muted)}
+.note{font-size:.85rem;color:var(--muted);background:var(--accent-soft);border-radius:10px;padding:10px 12px}
+.summary{white-space:pre-wrap;font-size:1rem;line-height:1.6}
+.chart svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.pill{font:500 .72rem var(--mono);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.p-open{background:var(--restore-soft);color:var(--restore)}
+.p-kept{background:var(--win-soft);color:var(--win)}
+.p-missed{background:var(--incident-soft);color:var(--incident)}
+.gridhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.gridhead .legend{margin:0}
+.mini{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:3px}
+.lg-i{color:var(--incident)} .lg-w{color:var(--win)}
+.weeks{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:6px;align-items:stretch}
+.dow{font-size:.75rem;color:var(--muted);text-align:center}
+.wk-label{font-size:.72rem;color:var(--muted);align-self:center;padding-right:4px;white-space:nowrap}
+.day-tile{border-radius:14px;min-height:58px;padding:6px 8px;display:flex;flex-direction:column;justify-content:space-between;background:var(--bg);border:1.5px solid transparent}
+.day-tile.good{background:var(--win-soft)} .day-tile.hard{background:var(--incident-soft)} .day-tile.even{background:var(--accent-soft)}
+.day-tile.future{opacity:.35} .day-tile.today{border-color:var(--accent)}
+.dnum{font-size:.78rem;color:var(--muted)}
+.counts{display:flex;gap:6px;flex-wrap:wrap;font-size:.85rem;font-variant-numeric:tabular-nums}
+.growth{display:flex;flex-direction:column;gap:5px}
+.growth .lab{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
+.growth .lab b{font-weight:500;color:var(--goal)}
+.gbar{height:14px;border-radius:7px;background:var(--goal-soft);overflow:hidden}
+.gbar i{display:block;height:100%;border-radius:7px;background:var(--goal)}
+.gnote{font-size:.8rem;color:var(--muted)}
+@media (max-width:420px){.wk-label{font-size:.64rem}.day-tile{min-height:52px;padding:5px}.counts{font-size:.78rem;gap:3px}.mini{width:13px;height:13px}}
+.empty{text-align:center;color:var(--muted);padding:28px 12px}
+.kv{display:grid;grid-template-columns:minmax(90px,34%) minmax(0,1fr);gap:10px;font-size:.92rem;padding:6px 0;border-bottom:1px solid var(--line)}
+.kv span{color:var(--muted)} .kv b{font-weight:400;overflow-wrap:anywhere}
+.addendum{border-left:3px solid var(--accent);padding:2px 0 2px 12px} .addendum p{margin:2px 0 0}
+.entry.voided{opacity:.6} .entry.voided .head{text-decoration:line-through}
+dialog{border:0;border-radius:24px;padding:0;width:min(560px,calc(100vw - 24px));background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(40,50,55,.35)}
+dialog form{padding:18px;display:flex;flex-direction:column;gap:12px;max-height:85vh;overflow:auto}
+dialog h2{margin:0;font-size:1.2rem}
+.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);padding:11px 18px;border-radius:999px;font-size:.9rem;z-index:20}
+.confirm{border-radius:16px;border:1.5px solid var(--incident);background:var(--incident-soft);color:var(--incident);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media (max-width:620px){
+  .quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg><b>BridgeLog</b><span>behavior, progress and repair, in one timeline</span></div>
+    <span class="local" title="Nothing is sent anywhere. Back up from the Data tab.">● Saved on this device only</span>
+  </header>
+
+  <div class="studentbar">
+    <label for="student" class="f" style="flex:1 1 220px">Student
+      <select id="student" aria-label="Choose student"></select>
+    </label>
+    <button id="addStudentBtn" class="ghost" style="align-self:flex-end">+ Student</button>
+  </div>
+
+  <div class="quick" role="group" aria-label="Quick log">
+    <button class="q-incident" data-log="incident"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.4 4.3 4.3 0 0 0 7 18z"/></svg>Incident<small>what happened, before & after</small></button>
+    <button class="q-win" data-log="win"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12C12 8.2 9.4 5.5 5 5.5c0 4.2 2.8 6.5 7 6.5z"/><path d="M12 14.5c0-3.3 2.4-5.5 6.5-5.5 0 3.7-2.6 5.5-6.5 5.5z"/></svg>Win<small>a success worth noting</small></button>
+    <button class="q-goal" data-log="goal"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" class="dot"/></svg>Goal data<small>score toward an IEP goal</small></button>
+    <button class="q-restore" data-log="restore"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg>Restorative<small>conversation & agreement</small></button>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="timeline" aria-selected="true">Timeline</button>
+    <button role="tab" data-tab="patterns" aria-selected="false">Patterns</button>
+    <button role="tab" data-tab="repair" aria-selected="false">Restorative</button>
+    <button role="tab" data-tab="summary" aria-selected="false">Summary</button>
+    <button role="tab" data-tab="data" aria-selected="false">Data</button>
+  </nav>
+
+  <section class="view" id="v-timeline"></section>
+  <section class="view" id="v-patterns" hidden></section>
+  <section class="view" id="v-repair" hidden></section>
+  <section class="view" id="v-summary" hidden></section>
+  <section class="view" id="v-data" hidden></section>
+</div>
+
+<dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+
+<script>
+// ---------------- vocab ----------------
+const ANTECEDENTS = ["Demand or task given","Transition","Told no / item denied","Peer conflict","Unstructured time","Adult attention elsewhere","Noise or crowding","Change in routine","Other"];
+const CONSEQUENCES = [
+  ["Redirected to task","none"],["Break given","escape"],["Task removed or changed","escape"],["Left the area","escape"],
+  ["Adult attention / talk","attention"],["Peer attention","attention"],["Item or activity given","tangible"],
+  ["Planned ignoring","sensory"],["Continued without response","sensory"],["Other","none"]];
+const FUNCTIONS = {escape:"Escape or avoid something",attention:"Get attention",tangible:"Get an item or activity",sensory:"Sensory / automatic"};
+const ACTIVITIES = ["Arrival","Morning work","Reading","Math","Specials","Lunch","Recess","Small group","Independent work","Dismissal","Other"];
+const WIN_SKILLS = ["Followed directions","Used a coping strategy","Asked for help","Asked for a break","Kind to a peer","Stayed with the task","Smooth transition","Tried something hard"];
+const RQ = ["What happened?","What were you thinking at the time?","Who has been affected, and how?","What do you need, and what do they need?","What can be done to make things right?"];
+
+// ---------------- storage ----------------
+const KEY = "bridgelog.v1";
+let db = {students:[], entries:[], current:null, sample:false};
+function load(){ try{ const s = localStorage.getItem(KEY); if (s) db = JSON.parse(s); }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ toast("Couldn't save on this device. Export a backup from the Data tab."); } }
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+
+// ---------------- helpers ----------------
+const $ = s => document.querySelector(s);
+function el(tag, attrs={}, ...kids){ const e=document.createElement(tag);
+  for (const k in attrs){ if(k==="class") e.className=attrs[k]; else if(k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if(attrs[k]!==false && attrs[k]!=null) e.setAttribute(k, attrs[k]); }
+  for (const kid of kids){ if (kid==null) continue; e.append(kid.nodeType ? kid : document.createTextNode(kid)); } return e; }
+const dayKey = t => { const d=new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const fmtDay = k => new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
+const fmtTime = t => new Date(t).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+const localInput = t => { const d=new Date(t); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); };
+function toast(msg){ const t=el("div",{class:"toast",role:"status"},msg); document.body.append(t); setTimeout(()=>t.remove(),2600); }
+const stu = () => db.students.find(s=>s.id===db.current);
+const allMine = () => db.entries.filter(e=>e.student===db.current).sort((a,b)=>b.t-a.t);
+const mine = () => allMine().filter(e=>!e.voided);
+const isLocked = e => dayKey(e.c||e.t) !== dayKey(Date.now());
+const pct = (a,b) => b ? Math.round(100*a/b) : 0;
+
+// ---------------- pure analysis (tested) ----------------
+function inRange(entries, from, to){ return entries.filter(e=>e.t>=from && e.t<to); }
+function countBy(list, f){ const m=new Map(); for(const x of list){ const k=f(x); if(k==null||k==="") continue; m.set(k,(m.get(k)||0)+1);} return [...m.entries()].sort((a,b)=>b[1]-a[1]); }
+function functionOf(consequence){ const c = CONSEQUENCES.find(x=>x[0]===consequence); return c ? c[1] : "none"; }
+function hourBand(t){ const h=new Date(t).getHours(); return h<10?"Before 10am":h<12?"10am–noon":h<14?"Noon–2pm":"After 2pm"; }
+function patterns(entries){
+  const inc = entries.filter(e=>e.type==="incident");
+  const fn = countBy(inc, e=>{ const f=functionOf(e.consequence); return f==="none"?null:f; });
+  return {n:inc.length, antecedents:countBy(inc,e=>e.antecedent), activities:countBy(inc,e=>e.activity),
+          times:countBy(inc,e=>hourBand(e.t)), functions:fn, fnTotal:fn.reduce((s,x)=>s+x[1],0),
+          intensity:countBy(inc,e=>["","Low","Moderate","High"][e.intensity||0])};
+}
+function summarize(name, entries, from, to){
+  const cur = inRange(entries, from, to), span = to-from, prev = inRange(entries, from-span, from);
+  const days = Math.max(1, Math.round(span/864e5));
+  const inc = cur.filter(e=>e.type==="incident"), pinc = prev.filter(e=>e.type==="incident");
+  const wins = cur.filter(e=>e.type==="win"), goals = cur.filter(e=>e.type==="goal"), rs = cur.filter(e=>e.type==="restore");
+  const P = patterns(cur), parts = [];
+  const range = `${new Date(from).toLocaleDateString(undefined,{month:"long",day:"numeric"})} to ${new Date(to-1).toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})}`;
+  parts.push(`Summary for ${name}, ${range} (${days} day${days>1?"s":""}).`);
+  if (!cur.length){ parts.push("No entries were logged in this period."); return parts.join("\n\n"); }
+  let s = `${inc.length} behavior incident${inc.length===1?" was":"s were"} logged`;
+  if (pinc.length || prev.length){
+    const d = inc.length - pinc.length;
+    s += d<0 ? `, down from ${pinc.length} in the previous ${days} days` : d>0 ? `, up from ${pinc.length} in the previous ${days} days` : `, the same as the previous ${days} days`;
+  }
+  s += ".";
+  if (inc.length){
+    const a = P.antecedents[0], act = P.activities[0], tm = P.times[0];
+    if (a) s += ` The most common situation beforehand was "${a[0].toLowerCase()}" (${a[1]} of ${inc.length}).`;
+    if (act) s += ` Incidents happened most often during ${act[0].toLowerCase()}`+(tm?`, usually ${tm[0].toLowerCase()}`:"")+".";
+    const hi = inc.filter(e=>e.intensity===3).length;
+    s += hi ? ` ${hi} ${hi===1?"was":"were"} rated high intensity.` : " None were rated high intensity.";
+  }
+  parts.push(s);
+  if (wins.length){
+    const top = countBy(wins,e=>e.skill)[0];
+    parts.push(`${wins.length} success${wins.length===1?" was":"es were"} recorded`+(top?`, most often "${top[0].toLowerCase()}"`:"")+".");
+  }
+  const byGoal = new Map(); goals.forEach(g=>{ if(!byGoal.has(g.goal)) byGoal.set(g.goal,[]); byGoal.get(g.goal).push(g); });
+  for (const [goal, list] of byGoal){
+    const sorted = list.slice().sort((a,b)=>a.t-b.t), avg = Math.round(sorted.reduce((s,x)=>s+x.score,0)/sorted.length);
+    const first = sorted[0].score, last = sorted[sorted.length-1].score;
+    parts.push(`Goal "${goal}": ${sorted.length} data point${sorted.length===1?"":"s"}, averaging ${avg}%`+(sorted.length>1?`, moving from ${first}% to ${last}%.`:"."));
+  }
+  if (rs.length){
+    const kept = rs.filter(r=>r.status==="kept").length, missed = rs.filter(r=>r.status==="missed").length, open = rs.length-kept-missed;
+    parts.push(`${rs.length} restorative conversation${rs.length===1?" was":"s were"} held. Agreements: ${kept} kept, ${missed} not kept, ${open} still open.`);
+  }
+  if (P.fnTotal >= 3){
+    const f = P.functions[0];
+    parts.push(`Pattern to discuss with the team: in ${pct(f[1],P.fnTotal)}% of incidents with a recorded response, the response was consistent with "${FUNCTIONS[f[0]].toLowerCase()}". This is a pattern in the log, not a completed functional behavior assessment.`);
+  }
+  return parts.join("\n\n");
+}
+
+// ---------------- dialogs ----------------
+const dlg = $("#dlg"), form = $("#dlgForm");
+function chipGroup(name, options, value){
+  const g = el("div",{class:"chips",role:"group","aria-label":name});
+  options.forEach(o=>{ const b=el("button",{type:"button",class:"chip","aria-pressed":String(o===value)},o);
+    b.addEventListener("click",()=>{ g.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); g.dataset.value=o; });
+    g.append(b); });
+  if (value) g.dataset.value = value;
+  return g;
+}
+function openForm(title, body, onSave){
+  form.replaceChildren(el("h2",{},title), ...body,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Save")));
+  form.onsubmit = e => { e.preventDefault(); if (onSave()!==false){ const now=Date.now(); db.entries.forEach(x=>{ if(!x.c) x.c=now; }); dlg.close(); save(); render(); } };
+  dlg.showModal(); const first = form.querySelector("input,textarea,select"); if (first) first.focus();
+}
+const field = (label, input) => el("label",{class:"f"}, label, input);
+const timeInput = () => el("input",{type:"datetime-local",id:"f-time",value:localInput(Date.now())});
+const readTime = () => { const v=$("#f-time").value; const t = v ? new Date(v).getTime() : Date.now(); return isNaN(t)?Date.now():t; };
+
+function needStudent(){ if (!stu()){ addStudent(); return true; } return false; }
+function addStudent(){
+  const nm = el("input",{id:"f-name",placeholder:"Initials or first name only, e.g. J.M.",required:"",maxlength:"40"});
+  const beh = el("input",{id:"f-beh",placeholder:"e.g. leaving seat, hitting, refusal"});
+  const goals = el("textarea",{id:"f-goals",placeholder:"One per line, e.g. Coin identification (80%)"});
+  openForm("Add a student",[field("Name",nm), field("Target behaviors (comma separated)",beh), field("IEP goals to track",goals),
+    el("p",{class:"note"},"Use initials. This app keeps everything on this device, but initials are still the safest habit.")], ()=>{
+      const s={id:uid(), name:nm.value.trim(), behaviors:beh.value.split(",").map(x=>x.trim()).filter(Boolean), goals:goals.value.split("\n").map(x=>x.trim()).filter(Boolean)};
+      if(!s.name) return false; db.students.push(s); db.current=s.id; toast(`Added ${s.name}`);
+  });
+}
+function logIncident(){
+  if (needStudent()) return; const s=stu();
+  const beh = s.behaviors.length ? chipGroup("Behavior", s.behaviors) : null;
+  const behTxt = el("input",{id:"f-behtxt",placeholder:"Describe what you saw and heard"});
+  const act = el("select",{id:"f-act"}, ...ACTIVITIES.map(a=>el("option",{},a)));
+  const ant = chipGroup("Before", ANTECEDENTS), con = chipGroup("After", CONSEQUENCES.map(c=>c[0]));
+  const inten = chipGroup("Intensity", ["Low","Moderate","High"], "Low");
+  const dur = el("input",{id:"f-dur",type:"number",min:"0",step:"1",inputmode:"numeric",placeholder:"minutes"});
+  const notes = el("textarea",{id:"f-notes",placeholder:"Anything else the team should know"});
+  openForm(`Incident · ${s.name}`,[ beh?field("Behavior",beh):null, field(beh?"Or describe it":"Behavior",behTxt),
+    el("div",{class:"row"}, field("When",timeInput()), field("Activity",act)),
+    field("A · What happened right before",ant), field("C · What adults did right after",con),
+    el("div",{class:"row"}, field("Intensity",inten), field("Duration",dur)), field("Notes",notes)], ()=>{
+      const behavior = behTxt.value.trim() || (beh && beh.dataset.value) || "";
+      if (!behavior){ toast("Add the behavior first."); return false; }
+      db.entries.push({id:uid(), student:s.id, type:"incident", t:readTime(), behavior, activity:act.value, antecedent:ant.dataset.value||"",
+        consequence:con.dataset.value||"", intensity:["Low","Moderate","High"].indexOf(inten.dataset.value)+1, duration:+dur.value||0, notes:notes.value.trim()});
+      toast("Incident logged");
+  });
+}
+function logWin(){
+  if (needStudent()) return; const s=stu();
+  const sk = chipGroup("Skill", WIN_SKILLS), what = el("input",{id:"f-what",placeholder:"What went well?"});
+  openForm(`Win · ${s.name}`,[field("Skill shown",sk), field("What happened",what), field("When",timeInput())], ()=>{
+    if (!sk.dataset.value && !what.value.trim()){ toast("Pick a skill or describe the win."); return false; }
+    db.entries.push({id:uid(), student:s.id, type:"win", t:readTime(), skill:sk.dataset.value||"", what:what.value.trim()}); toast("Win logged");
+  });
+}
+function logGoal(){
+  if (needStudent()) return; const s=stu();
+  const g = el("select",{id:"f-goal"}, ...(s.goals.length? s.goals : ["General"]).map(x=>el("option",{},x)));
+  const sc = el("input",{id:"f-score",type:"number",min:"0",max:"100",step:"1",inputmode:"numeric",placeholder:"e.g. 70",required:""});
+  const n = el("input",{id:"f-gnote",placeholder:"Prompts, setting, number of trials"});
+  openForm(`Goal data · ${s.name}`,[field("Goal",g), el("div",{class:"row"}, field("Score (%)",sc), field("When",timeInput())), field("Note",n)], ()=>{
+    const v = +sc.value; if (sc.value==="" || v<0 || v>100){ toast("Enter a score from 0 to 100."); return false; }
+    db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal:g.value, score:v, notes:n.value.trim()}); toast("Goal data saved");
+  });
+}
+function logRestore(existing){
+  if (needStudent()) return; const s=stu();
+  const ans = RQ.map((q,i)=>el("textarea",{id:`f-rq${i}`},existing?.answers?.[i]||""));
+  const who = el("input",{id:"f-who",placeholder:"Who took part",value:existing?.who||""});
+  const agree = el("textarea",{id:"f-agree",placeholder:"What everyone agreed to do",value:""}); agree.value = existing?.agreement||"";
+  const fu = el("input",{id:"f-fu",type:"date",value:existing?.followUp||dayKey(Date.now()+3*864e5)});
+  openForm(`Restorative conversation · ${s.name}`,[ el("p",{class:"note"},"Ask, listen, and write their words where you can. Skip any question that doesn't fit."),
+    ...RQ.map((q,i)=>field(q,ans[i])), el("div",{class:"row"}, field("Participants",who), field("Check back on",fu)), field("Agreement",agree),
+    existing?null:field("When",timeInput())], ()=>{
+      if (!agree.value.trim() && !ans.some(a=>a.value.trim())){ toast("Write at least one answer or the agreement."); return false; }
+      const rec = existing || {id:uid(), student:s.id, type:"restore", t:readTime(), status:"open"};
+      Object.assign(rec,{answers:ans.map(a=>a.value.trim()), who:who.value.trim(), agreement:agree.value.trim(), followUp:fu.value});
+      if (!existing) db.entries.push(rec); toast(existing?"Conversation updated":"Conversation logged");
+  });
+}
+
+// ---------------- views ----------------
+const COLORS = {incident:"var(--incident)",win:"var(--win)",goal:"var(--goal)",restore:"var(--restore)"};
+let filter = "all", showVoided = false;
+function describe(e){
+  if (e.type==="incident") return [`${e.behavior}`, [e.activity, e.antecedent&&`Before: ${e.antecedent}`, e.consequence&&`After: ${e.consequence}`, e.intensity&&["","Low","Moderate","High"][e.intensity]+" intensity", e.duration?`${e.duration} min`:null, e.notes].filter(Boolean).join(" · ")];
+  if (e.type==="win") return [`Win: ${e.skill||"Success"}`, e.what];
+  if (e.type==="goal") return [`${e.goal}: ${e.score}%`, e.notes];
+  return [`Restorative conversation`, (e.agreement?`Agreement: ${e.agreement}`:"") + (e.followUp?` · Check back ${new Date(e.followUp+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})}`:"")];
+}
+function chart(entries){
+  const days = 28, end = new Date(); end.setHours(0,0,0,0); end.setDate(end.getDate()+1);
+  const keys = [...Array(days)].map((_,i)=>dayKey(end.getTime() - (days-i)*864e5));
+  const inc = Object.fromEntries(keys.map(k=>[k,0])), win = Object.fromEntries(keys.map(k=>[k,0])), gs = {};
+  entries.forEach(e=>{ const k=dayKey(e.t); if(!(k in inc)) return; if(e.type==="incident") inc[k]++; if(e.type==="win") win[k]++; if(e.type==="goal"){ (gs[k] ||= []).push(e.score);} });
+  const W=760, H=210, P={l:30,r:34,t:10,b:24}, cw=(W-P.l-P.r)/days;
+  const maxC = Math.max(3, ...keys.map(k=>Math.max(inc[k],win[k])));
+  const NS="http://www.w3.org/2000/svg", s=document.createElementNS(NS,"svg"); s.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  s.setAttribute("role","img"); s.setAttribute("aria-label","Incidents and wins per day for the last 4 weeks, with goal scores as a line");
+  const mk=(n,a)=>{const e=document.createElementNS(NS,n); for(const k in a) e.setAttribute(k,a[k]); s.append(e); return e;};
+  const y = v => P.t + (H-P.t-P.b)*(1 - v/maxC), yp = v => P.t + (H-P.t-P.b)*(1 - v/100);
+  for (let v=0; v<=maxC; v+=Math.ceil(maxC/3)){ mk("line",{x1:P.l,x2:W-P.r,y1:y(v),y2:y(v),stroke:"var(--line)"}); const t=mk("text",{x:P.l-6,y:y(v)+4,"text-anchor":"end","font-size":11,fill:"var(--muted)","font-family":"var(--mono)"}); t.textContent=v; }
+  [0,50,100].forEach(v=>{ const t=mk("text",{x:W-P.r+6,y:yp(v)+4,"font-size":11,fill:"var(--goal)","font-family":"var(--mono)"}); t.textContent=v+"%"; });
+  keys.forEach((k,i)=>{ const x=P.l+i*cw, bw=Math.max(2,cw/2-2);
+    if(inc[k]) mk("rect",{x:x+1,y:y(inc[k]),width:bw,height:y(0)-y(inc[k]),rx:2,fill:"var(--incident)"});
+    if(win[k]) mk("rect",{x:x+1+bw+1,y:y(win[k]),width:bw,height:y(0)-y(win[k]),rx:2,fill:"var(--win)"});
+    if(i%7===0){ const t=mk("text",{x:x+cw/2,y:H-6,"text-anchor":"middle","font-size":11,fill:"var(--muted)","font-family":"var(--mono)"}); t.textContent=new Date(k+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"}); } });
+  const pts = keys.map((k,i)=> gs[k] ? [P.l+i*cw+cw/2, yp(gs[k].reduce((a,b)=>a+b,0)/gs[k].length)] : null).filter(Boolean);
+  if (pts.length>1) mk("polyline",{points:pts.map(p=>p.join(",")).join(" "),fill:"none",stroke:"var(--goal)","stroke-width":2.5,"stroke-linejoin":"round"});
+  pts.forEach(p=>mk("circle",{cx:p[0],cy:p[1],r:3.5,fill:"var(--goal)"}));
+  return s;
+}
+const ICON = {
+  cloud:'<path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.4 4.3 4.3 0 0 0 7 18z"/>',
+  sprout:'<path d="M12 21v-9"/><path d="M12 12C12 8.2 9.4 5.5 5 5.5c0 4.2 2.8 6.5 7 6.5z"/><path d="M12 14.5c0-3.3 2.4-5.5 6.5-5.5 0 3.7-2.6 5.5-6.5 5.5z"/>'};
+function icon(name, cls="mini"){ const w=document.createElement("span"); w.innerHTML=`<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`; return w.firstChild; }
+function weekGrid(entries){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const mon = new Date(today); mon.setDate(today.getDate() - ((today.getDay()+6)%7));
+  const inc={}, win={};
+  entries.forEach(e=>{ const k=dayKey(e.t); if(e.type==="incident") inc[k]=(inc[k]||0)+1; if(e.type==="win") win[k]=(win[k]||0)+1; });
+  const card = el("div",{class:"card",style:"margin-top:12px"});
+  card.append(el("div",{class:"gridhead"}, el("b",{},"The last four weeks"),
+    el("span",{class:"legend"}, el("span",{class:"lg-i"},icon("cloud"),"tough moment"), el("span",{class:"lg-w"},icon("sprout"),"win"))));
+  const g = el("div",{class:"weeks",role:"table","aria-label":"Tough moments and wins per school day, last four weeks"});
+  g.append(el("div",{class:"wk-label"}), ...["Mon","Tue","Wed","Thu","Fri"].map(d=>el("div",{class:"dow"},d)));
+  for (let w=3; w>=0; w--){
+    const start = new Date(mon); start.setDate(mon.getDate()-7*w);
+    g.append(el("div",{class:"wk-label"}, start.toLocaleDateString(undefined,{month:"short",day:"numeric"})));
+    for (let d=0; d<5; d++){
+      const day = new Date(start); day.setDate(start.getDate()+d); const k=dayKey(day.getTime());
+      const i=inc[k]||0, wn=win[k]||0, future = day>today;
+      const mood = future ? "future" : (!i && !wn) ? "quiet" : wn>i ? "good" : i>wn ? "hard" : "even";
+      const t = el("div",{class:`day-tile ${mood}${k===dayKey(today.getTime())?" today":""}`, role:"cell",
+        "aria-label": `${day.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})}: ${i} tough moment${i===1?"":"s"}, ${wn} win${wn===1?"":"s"}`});
+      t.append(el("span",{class:"dnum"},String(day.getDate())));
+      if (!future && (i||wn)){
+        const row = el("span",{class:"counts"});
+        if (i) row.append(el("span",{class:"lg-i"},icon("cloud"),String(i)));
+        if (wn) row.append(el("span",{class:"lg-w"},icon("sprout"),String(wn)));
+        t.append(row);
+      }
+      g.append(t);
+    }
+  }
+  card.append(g); return card;
+}
+function goalGrowth(entries){
+  const s = stu(), goals = entries.filter(e=>e.type==="goal");
+  const names = [...new Set([...(s?.goals||[]), ...goals.map(g=>g.goal)])];
+  const card = el("div",{class:"card stack",style:"margin-top:12px"}, el("b",{},"Goal growth"));
+  let any=false;
+  names.forEach(n=>{
+    const list = goals.filter(g=>g.goal===n).sort((a,b)=>a.t-b.t); if(!list.length) return; any=true;
+    const recent = list.filter(g=>g.t>=Date.now()-28*864e5), first=(recent[0]||list[0]).score, last=list[list.length-1].score;
+    const diff = last-first, word = list.length<2 ? "first score logged" : diff>=5 ? `up from ${first}% this month` : diff<=-5 ? `down from ${first}% this month` : `steady this month`;
+    card.append(el("div",{class:"growth"},
+      el("div",{class:"lab"}, el("span",{},n), el("b",{},`${last}%`)),
+      el("div",{class:"gbar"}, el("i",{style:`width:${Math.max(3,last)}%`})),
+      el("span",{class:"gnote"}, `${word} · ${list.length} data point${list.length===1?"":"s"}`)));
+  });
+  if (!any) card.append(el("p",{class:"empty",style:"padding:6px"},"Goal scores will show here as they're logged."));
+  return card;
+}
+function vTimeline(){
+  const v=$("#v-timeline"); v.replaceChildren();
+  const all = mine(); if (!stu()){ v.append(emptyState()); return; }
+  const now=Date.now(), wk=7*864e5, w1=inRange(all,now-wk,now+1), w0=inRange(all,now-2*wk,now-wk);
+  const k=(label,cur,prev,good)=>{ const d=cur-prev; const sign=d>0?"+":""; const better = good? d>=0 : d<=0;
+    return el("div",{class:"kpi"}, el("b",{},String(cur)), el("span",{},label), el("div",{class:"delta",style:`color:var(${d===0?"--muted":better?"--win":"--incident"})`}, `${sign}${d} vs last week`)); };
+  const gw = w1.filter(e=>e.type==="goal"), gavg = gw.length? Math.round(gw.reduce((s,e)=>s+e.score,0)/gw.length):null;
+  v.append(el("div",{class:"kpis"},
+    k("Tough moments this week", w1.filter(e=>e.type==="incident").length, w0.filter(e=>e.type==="incident").length, false),
+    k("Wins this week", w1.filter(e=>e.type==="win").length, w0.filter(e=>e.type==="win").length, true),
+    el("div",{class:"kpi"}, el("b",{},gavg==null?"—":gavg+"%"), el("span",{},"Avg goal score this week")),
+    el("div",{class:"kpi"}, el("b",{},String(all.filter(e=>e.type==="restore"&&e.status==="open").length)), el("span",{},"Open agreements"))));
+  v.append(weekGrid(all), goalGrowth(all));
+  const fl = el("div",{class:"chips",style:"margin-top:14px"});
+  [["all","Everything"],["incident","Incidents"],["win","Wins"],["goal","Goal data"],["restore","Restorative"]].forEach(([k,l])=>{
+    fl.append(el("button",{type:"button",class:"chip","aria-pressed":String(filter===k),onclick:()=>{filter=k; vTimeline();}},l)); });
+  v.append(fl);
+  fl.append(el("button",{type:"button",class:"chip","aria-pressed":String(showVoided),onclick:()=>{showVoided=!showVoided; vTimeline();}},"Show voided"));
+  const list = (showVoided ? allMine() : all).filter(e=>filter==="all"||e.type===filter);
+  if (!list.length){ v.append(el("p",{class:"empty"},"Nothing logged yet. Use the buttons above to add the first entry.")); return; }
+  let cur=null, box=null;
+  for (const e of list.slice(0,200)){
+    const dk=dayKey(e.t); if (dk!==cur){ cur=dk; box=el("div",{class:"day"}, el("h3",{},fmtDay(dk))); v.append(box); }
+    const [head, sub] = describe(e);
+    const notes = (e.addenda||[]).length;
+    box.append(el("div",{class:"entry"+(e.voided?" voided":"")}, el("div",{class:"stripe",style:`background:${COLORS[e.type]}`}),
+      el("div",{}, el("div",{class:"head"},head, e.voided?el("span",{class:"pill p-missed",style:"margin-left:8px"},"Voided"):null), sub?el("p",{},sub):null,
+        notes?el("p",{class:"t",style:"margin-top:4px"},`${notes} added note${notes>1?"s":""}`):null),
+      el("div",{style:"display:flex;flex-direction:column;align-items:flex-end;gap:6px"}, el("span",{class:"t"},fmtTime(e.t)),
+        el("button",{type:"button",class:"small ghost","aria-label":"View full entry",onclick:()=>viewEntry(e)},"View"))));
+  }
+}
+function viewEntry(e){
+  const locked = isLocked(e), rows = [];
+  const add=(k,v)=>{ if(v!==undefined && v!==null && v!=="") rows.push(el("div",{class:"kv"}, el("span",{},k), el("b",{},String(v)))); };
+  add("Happened", new Date(e.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}));
+  add("Entered", new Date(e.c||e.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}));
+  if (e.type==="incident"){ add("Behavior",e.behavior); add("Activity",e.activity); add("Before",e.antecedent); add("After",e.consequence); add("Intensity",["","Low","Moderate","High"][e.intensity||0]); add("Duration",e.duration?e.duration+" min":""); add("Notes",e.notes); }
+  if (e.type==="win"){ add("Skill",e.skill); add("What happened",e.what); }
+  if (e.type==="goal"){ add("Goal",e.goal); add("Score",e.score+"%"); add("Note",e.notes); }
+  if (e.type==="restore"){ RQ.forEach((q,i)=>add(q,e.answers?.[i])); add("Participants",e.who); add("Agreement",e.agreement); add("Check back on",e.followUp); add("Status",{open:"Open",kept:"Kept",missed:"Not kept"}[e.status]); }
+  const titles = {incident:"Incident",win:"Win",goal:"Goal data",restore:"Restorative conversation"};
+  const banner = e.voided ? el("div",{class:"confirm"}, `Voided ${new Date(e.voided.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})}: ${e.voided.reason}. Kept for the record and left out of patterns and summaries.`)
+    : el("p",{class:"note"}, locked ? "This entry is locked because the day it was entered has passed. You can add a dated note below, but the original can't be changed or removed."
+                                     : "You can void this entry until the end of today if it was a mistake. After that it locks for good.");
+  const history = (e.addenda||[]).map(a=>el("div",{class:"addendum"}, el("span",{class:"t"},new Date(a.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})), el("p",{},a.text)));
+  const note = el("textarea",{id:"f-addendum",placeholder:"Add a dated note. The original entry stays exactly as it was."});
+  const reason = el("input",{id:"f-void",placeholder:"Why? e.g. logged for the wrong student"});
+  const voidArea = el("div",{class:"stack",hidden:""}, field("Reason for voiding (required)", reason),
+    el("div",{class:"actions"}, el("button",{type:"button",class:"small",onclick:()=>{ const r=reason.value.trim(); if(!r){ toast("Write a reason first."); return; }
+      e.voided={t:Date.now(), reason:r}; save(); dlg.close(); render(); toast("Entry voided. It's kept for the record."); }},"Void this entry")));
+  form.replaceChildren(el("h2",{},titles[e.type]), banner, el("div",{class:"stack"}, ...rows),
+    history.length ? el("div",{class:"stack"}, el("b",{},"Added notes"), ...history) : null,
+    field("Add a note", note), voidArea,
+    el("div",{class:"actions"},
+      (!locked && !e.voided) ? el("button",{type:"button",class:"ghost",onclick:()=>{ voidArea.hidden=false; reason.focus(); }},"Void entry…") : null,
+      el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Close"),
+      el("button",{type:"button",class:"primary",onclick:()=>{ const t=note.value.trim(); if(!t){ toast("Write the note first."); return; }
+        (e.addenda ||= []).push({t:Date.now(), text:t}); save(); dlg.close(); render(); toast("Note added"); }},"Add note")));
+  form.onsubmit = ev => ev.preventDefault();
+  dlg.showModal();
+}
+function barList(title, rows, total){
+  const c=el("div",{class:"card stack"}, el("b",{},title));
+  if (!rows.length){ c.append(el("p",{class:"empty",style:"padding:8px"},"No data yet")); return c; }
+  const b=el("div",{class:"bars"});
+  rows.slice(0,6).forEach(([k,n])=>{ b.append(el("div",{}, el("div",{class:"lab"}, el("b",{style:"font-weight:400"},k), el("span",{},`${n} · ${pct(n,total)}%`)), el("div",{class:"bar"}, el("i",{style:`width:${pct(n,total)}%`})))); });
+  c.append(b); return c;
+}
+function vPatterns(){
+  const v=$("#v-patterns"); v.replaceChildren(); if (!stu()){ v.append(emptyState()); return; }
+  const P = patterns(mine());
+  v.append(el("p",{class:"note"}, `Based on ${P.n} logged incident${P.n===1?"":"s"}. These are patterns to bring to your team. A behavior's function is confirmed through a functional behavior assessment by a qualified team.`));
+  const grid=el("div",{style:"display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px"});
+  grid.append(barList("What the behavior may be getting the student", P.functions.map(([k,n])=>[FUNCTIONS[k],n]), P.fnTotal),
+              barList("What usually happens right before", P.antecedents, P.n),
+              barList("During which activity", P.activities, P.n),
+              barList("Time of day", P.times, P.n));
+  v.append(grid);
+}
+function vRepair(){
+  const v=$("#v-repair"); v.replaceChildren(); if (!stu()){ v.append(emptyState()); return; }
+  const rs = mine().filter(e=>e.type==="restore"), kept=rs.filter(r=>r.status==="kept").length, missed=rs.filter(r=>r.status==="missed").length;
+  v.append(el("div",{class:"kpis"},
+    el("div",{class:"kpi"},el("b",{},String(rs.length)),el("span",{},"Conversations")),
+    el("div",{class:"kpi"},el("b",{},String(rs.length-kept-missed)),el("span",{},"Open")),
+    el("div",{class:"kpi"},el("b",{},String(kept)),el("span",{},"Kept")),
+    el("div",{class:"kpi"},el("b",{},kept+missed?pct(kept,kept+missed)+"%":"—"),el("span",{},"Follow-through rate"))));
+  if (!rs.length){ v.append(el("p",{class:"empty"},"No restorative conversations yet. Use the Restorative button after a conflict to record what was said and agreed.")); return; }
+  const today = dayKey(Date.now());
+  rs.sort((a,b)=>(a.status==="open"?0:1)-(b.status==="open"?0:1) || (a.followUp||"").localeCompare(b.followUp||""));
+  rs.forEach(r=>{
+    const due = r.status==="open" && r.followUp && r.followUp<=today;
+    const pill = el("span",{class:`pill p-${r.status}`}, r.status==="open"?(due?"Check back now":"Open"):r.status==="kept"?"Kept":"Not kept");
+    v.append(el("div",{class:"card stack",style:"margin-top:10px"},
+      el("div",{style:"display:flex;justify-content:space-between;gap:10px;align-items:center"}, el("b",{},new Date(r.t).toLocaleDateString(undefined,{month:"short",day:"numeric"})+(r.who?` · ${r.who}`:"")), pill),
+      r.agreement?el("div",{},el("b",{},"Agreement: "),r.agreement):null,
+      r.answers?.[2]?el("p",{style:"margin:0;color:var(--muted)"},"Who was affected: "+r.answers[2]):null,
+      el("div",{class:"row",style:"flex-wrap:wrap"},
+        el("button",{type:"button",class:"small",onclick:()=>{r.status="kept";(r.addenda ||= []).push({t:Date.now(),text:"Agreement marked as kept."});save();render();toast("Marked as kept");}},"Agreement kept"),
+        el("button",{type:"button",class:"small",onclick:()=>{r.status="missed";(r.addenda ||= []).push({t:Date.now(),text:"Agreement marked as not kept."});save();render();toast("Marked as not kept");}},"Not kept"),
+        el("button",{type:"button",class:"small ghost",onclick:()=> isLocked(r) ? viewEntry(r) : logRestore(r)},"Open notes"))));
+  });
+}
+function vSummary(){
+  const v=$("#v-summary"); v.replaceChildren(); if (!stu()){ v.append(emptyState()); return; }
+  const to = el("input",{type:"date",id:"s-to",value:dayKey(Date.now())});
+  const from = el("input",{type:"date",id:"s-from",value:dayKey(Date.now()-13*864e5)});
+  const out = el("div",{class:"card summary",id:"s-out"});
+  const go = ()=>{ const f=new Date(from.value+"T00:00").getTime(), t=new Date(to.value+"T00:00").getTime()+864e5;
+    out.textContent = (isNaN(f)||isNaN(t)||t<=f) ? "Pick a start date before the end date." : summarize(stu().name, mine(), f, t); };
+  from.addEventListener("change",go); to.addEventListener("change",go);
+  const copy = el("button",{type:"button",class:"primary",onclick:()=>{ navigator.clipboard.writeText(out.textContent).then(()=>toast("Summary copied"),()=>{ const r=document.createRange(); r.selectNodeContents(out); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Press copy on your device."); }); }},"Copy summary");
+  v.append(el("div",{class:"row"}, field("From",from), field("To",to)), el("div",{style:"height:12px"}), out,
+    el("div",{class:"actions",style:"margin-top:10px"}, copy),
+    el("p",{class:"note",style:"margin-top:10px"},"Read it over before sharing. It describes what was logged, so a gap in logging looks like a gap in behavior."));
+  go();
+}
+function vData(){
+  const v=$("#v-data"); v.replaceChildren();
+  const s=stu();
+  // In the Claude viewer, files go through its save prompt; as a plain web page, a normal download.
+  const dl = async (name, text, type) => {
+    const d = window.claude?.use ? await window.claude.use("downloads").catch(()=>null) : null;
+    if (d){ try{ await d.save({filename:name, data:text}); toast("Saved"); }catch(e){ if (e?.code!=="declined") toast("Couldn't save the file here."); } return; }
+    const a=el("a",{href:URL.createObjectURL(new Blob([text],{type})),download:name}); document.body.append(a); a.click(); a.remove(); toast("Saved");
+  };
+  const csv = () => { const rows=[["student","type","date","time","entered","detail","activity","before","after","intensity","minutes","score","notes","added notes","voided"]];
+    db.entries.slice().sort((a,b)=>a.t-b.t).forEach(e=>{ const st=db.students.find(x=>x.id===e.student); const d=new Date(e.t);
+      rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.behavior||e.skill||e.goal||e.agreement||"",e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",e.notes||e.what||"",(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):""]); });
+    return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n"); };
+  const imp = el("input",{type:"file",accept:"application/json",id:"importFile",style:"display:none"});
+  imp.addEventListener("change",()=>{ const f=imp.files[0]; if(!f) return; const r=new FileReader();
+    r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!Array.isArray(d.students)||!Array.isArray(d.entries)) throw 0; db=d; save(); render(); toast("Backup restored"); }catch(e){ toast("That file isn't a BridgeLog backup."); } };
+    r.readAsText(f); });
+  v.append(el("div",{class:"stack"},
+    el("div",{class:"card stack"}, el("b",{},"Your data stays here"),
+      el("p",{style:"margin:0;color:var(--muted)"},"BridgeLog has no accounts and sends nothing over the internet. Everything is stored in this browser on this device. Back it up regularly and keep the file where your school stores student records."),
+      el("div",{class:"row"},
+        el("button",{type:"button",class:"primary",onclick:()=>dl(`bridgelog-backup-${dayKey(Date.now())}.json`, JSON.stringify(db), "application/json")},"Download backup"),
+        el("button",{type:"button",onclick:()=>imp.click()},"Restore a backup"),
+        el("button",{type:"button",onclick:()=>{ dl(`bridgelog-${dayKey(Date.now())}.csv`, csv(), "text/csv"); }},"Export to spreadsheet (CSV)")), imp),
+    s? el("div",{class:"card stack"}, el("b",{},`${s.name}'s setup`),
+      el("p",{style:"margin:0;color:var(--muted)"},`Target behaviors: ${s.behaviors.join(", ")||"none set"}`),
+      el("p",{style:"margin:0;color:var(--muted)"},`Goals: ${s.goals.join("; ")||"none set"}`),
+      el("div",{class:"row"}, el("button",{type:"button",onclick:editStudent},"Edit behaviors and goals"))) : null,
+    el("div",{class:"card stack"}, el("b",{},"Try it with example data"),
+      el("p",{style:"margin:0;color:var(--muted)"},"Adds a made-up student with four weeks of entries so you can see every view filled in. You can delete them afterwards."),
+      el("div",{class:"row"}, el("button",{type:"button",onclick:()=>{ addSample(); render(); toast("Example student added"); }},"Add example student"),
+        el("button",{type:"button",class:"ghost",onclick:askClear},"Delete everything")))));
+}
+function editStudent(){
+  const s=stu(); const beh=el("input",{id:"e-beh",value:s.behaviors.join(", ")}); const goals=el("textarea",{id:"e-goals"}); goals.value=s.goals.join("\n");
+  const nm=el("input",{id:"e-name",value:s.name});
+  openForm(`Edit ${s.name}`,[field("Name",nm),field("Target behaviors (comma separated)",beh),field("IEP goals (one per line)",goals)],()=>{
+    s.name=nm.value.trim()||s.name; s.behaviors=beh.value.split(",").map(x=>x.trim()).filter(Boolean); s.goals=goals.value.split("\n").map(x=>x.trim()).filter(Boolean); toast("Saved"); });
+}
+function askClear(){
+  const v=$("#v-data"); v.querySelector(".confirm")?.remove();
+  const c=el("div",{class:"confirm",role:"alert"},"This deletes every student and entry on this device. Download a backup first if you might need it.",
+    el("button",{type:"button",class:"small",onclick:()=>{ db={students:[],entries:[],current:null}; save(); render(); toast("Everything deleted"); }},"Delete everything"),
+    el("button",{type:"button",class:"small ghost",onclick:()=>c.remove()},"Cancel"));
+  v.prepend(c);
+}
+function emptyState(){
+  return el("div",{class:"card empty stack",style:"align-items:center"},
+    el("b",{style:"font-size:1.1rem;color:var(--ink)"},"Start with a student"),
+    el("p",{style:"margin:0;max-width:44ch"},"Add a student by initials, then log incidents, wins, goal scores and restorative conversations. Or look around with example data first."),
+    el("div",{class:"row",style:"justify-content:center;max-width:420px"},
+      el("button",{type:"button",class:"primary",onclick:addStudent},"Add a student"),
+      el("button",{type:"button",onclick:()=>{ addSample(); render(); }},"Show me an example")));
+}
+function addSample(){
+  const s={id:uid(), name:"Example student", behaviors:["Leaving seat","Shouting out","Refusing work"], goals:["Coin identification (80%)","Asks for a break with card (4/5)"], sample:true};
+  db.students.push(s); db.current=s.id;
+  let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const now=new Date(); now.setHours(0,0,0,0);
+  for (let d=27; d>=0; d--){
+    const day=new Date(now.getTime()-d*864e5); if (day.getDay()===0||day.getDay()===6) continue;
+    const decline = d/27; const nInc = Math.round(rnd()*2 + decline*2.2);
+    for (let i=0;i<nInc;i++){
+      const t=day.getTime()+ (rnd()<0.6? (13+rnd()*1.5) : (9+rnd()*3))*36e5;
+      const math = rnd()<0.55, ant = math? "Demand or task given" : pick(["Transition","Unstructured time","Peer conflict","Told no / item denied"]);
+      const con = rnd()<0.6 ? pick(["Break given","Task removed or changed","Left the area"]) : pick(["Adult attention / talk","Redirected to task","Item or activity given"]);
+      db.entries.push({id:uid(),student:s.id,type:"incident",t,behavior:math?"Refusing work":pick(s.behaviors),activity:math?"Math":pick(["Reading","Recess","Small group","Dismissal"]),
+        antecedent:ant,consequence:con,intensity:rnd()<0.12?3:rnd()<0.4?2:1,duration:Math.round(1+rnd()*8),notes:""});
+    }
+    const nWin=Math.round(rnd()*2+(1-decline)*2); for(let i=0;i<nWin;i++) db.entries.push({id:uid(),student:s.id,type:"win",t:day.getTime()+(9+rnd()*6)*36e5,skill:pick(WIN_SKILLS),what:""});
+    if (day.getDay()%2===1) db.entries.push({id:uid(),student:s.id,type:"goal",t:day.getTime()+10.5*36e5,goal:s.goals[0],score:Math.min(100,Math.round(30+(1-decline)*40+rnd()*10)),notes:""});
+  }
+  const r1=new Date(now.getTime()-12*864e5+14*36e5).getTime(), r2=new Date(now.getTime()-3*864e5+13.5*36e5).getTime();
+  db.entries.push({id:uid(),student:s.id,type:"restore",t:r1,status:"kept",who:"Student, peer, para",followUp:dayKey(r1+3*864e5),
+    answers:["Grabbed the ball from a classmate at recess.","He said it was his turn.","The classmate was upset and recess ended early for both.","He needs a way to show it's his turn; the classmate wants an apology.","Apologize, and use the turn-taking card next recess."],agreement:"Apologize and use the turn-taking card at recess"});
+  db.entries.push({id:uid(),student:s.id,type:"restore",t:r2,status:"open",who:"Student, teacher",followUp:dayKey(r2+4*864e5),
+    answers:["Ripped up the math worksheet.","It was too hard and everyone was watching.","Himself, and the teacher who had to stop the lesson.","A break card he can use before it gets too hard.","Use the break card, then finish the first three problems."],agreement:"Use the break card before getting overwhelmed, then finish three problems"});
+  db.entries.forEach(e=>{ if(!e.c) e.c=e.t; });
+  save();
+}
+
+// ---------------- wiring ----------------
+const views = {timeline:vTimeline, patterns:vPatterns, repair:vRepair, summary:vSummary, data:vData};
+let tab = "timeline";
+function render(){
+  const sel=$("#student"); sel.replaceChildren(...db.students.map(s=>el("option",{value:s.id},s.name)));
+  if (!db.students.length) sel.append(el("option",{value:""},"No students yet"));
+  if (db.current && !stu()) db.current = db.students[0]?.id || null;
+  if (!db.current && db.students.length) db.current = db.students[0].id;
+  sel.value = db.current || "";
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===tab)));
+  Object.keys(views).forEach(k=>{ $("#v-"+k).hidden = k!==tab; });
+  views[tab]();
+}
+$("#student").addEventListener("change", e=>{ db.current=e.target.value; save(); render(); });
+$("#addStudentBtn").addEventListener("click", addStudent);
+document.querySelectorAll("[data-log]").forEach(b=>b.addEventListener("click",()=>({incident:logIncident,win:logWin,goal:logGoal,restore:()=>logRestore()})[b.dataset.log]()));
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{ tab=b.dataset.tab; render(); }));
+load();
+if (!db.students.length) addSample();   // open in a filled-in state so the first view shows what it does
+render();
+</script>
+
+</body>
+</html>
