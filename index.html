@@ -10,10 +10,11 @@
 <meta property="og:title" content="BridgeLog: behavior, progress and repair in one timeline">
 <meta property="og:description" content="A free behavior log for special education, built by a paraprofessional. Nothing leaves your device.">
 <meta property="og:image" content="img/timeline.jpg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap">
 <style>
+@font-face{font-family:"Lexend";font-weight:300;font-display:swap;src:url("app/fonts/Lexend-Light.woff") format("woff")}
+@font-face{font-family:"Lexend";font-weight:400;font-display:swap;src:url("app/fonts/Lexend-Regular.woff") format("woff")}
+@font-face{font-family:"Lexend";font-weight:500;font-display:swap;src:url("app/fonts/Lexend-Medium.woff") format("woff")}
+@font-face{font-family:"Lexend";font-weight:600;font-display:swap;src:url("app/fonts/Lexend-SemiBold.woff") format("woff")}
 /* Layout: one calm column; hero with live link, phone screenshots, six features, privacy, maker, pilot. */
 :root{
   --bg:#f1f4f0; --surface:#fbfcf9; --ink:#2e3a3a; --muted:#6b7877; --line:#dde4de;
@@ -165,6 +166,7 @@ footer{border-top:1px solid var(--line);padding-top:18px;font-size:.85rem;color:
       <details><summary>What does it cost?</summary><p>Nothing during the pilot. Later there will be a free single-classroom version, plus school and district licenses that include setup help.</p></details>
       <details><summary>Do I need to install anything?</summary><p>No. Open it in any browser. On a phone you can add it to your home screen from the browser's share menu so it opens like an app.</p></details>
       <details><summary>Can my teacher and I see the same student's log?</summary><p>Not yet. Each device keeps its own log, and you can move data between devices with a backup file. Shared team logs are the most likely next feature, and pilot feedback will shape how they work.</p></details>
+      <details><summary>Does it work without internet?</summary><p>Yes. After you open it once, BridgeLog keeps a copy of itself on the device and opens without a connection. Your logs were never online to begin with.</p></details>
       <details><summary>What happens if I clear my browser?</summary><p>Clearing site data erases the log on that device, which is why the Data tab has a backup button. Save a backup regularly.</p></details>
       <details><summary>What if a phone or school laptop gets lost or shared?</summary><p>Turn on a passcode in the Data tab. Everything on the device is then encrypted, backups are encrypted too, and the app locks itself after a few minutes without use. A forgotten passcode can't be recovered by anyone, so keep backups.</p></details>
       <details><summary>How do I know records haven't been altered?</summary><p>Entries lock at the end of the day they're entered. On top of that, the Record check compares the device against any backup file and lists anything missing or changed since it locked.</p></details>
