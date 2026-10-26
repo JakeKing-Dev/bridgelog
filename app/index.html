@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="description" content="Phone-first behavior log for special education: tough moments, wins, IEP goal data and restorative conversations on one timeline. Nothing leaves your device.">
 <meta name="theme-color" content="#5b6fa8">
@@ -12,14 +12,12 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BridgeLog">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>@font-face{font-family:"Lexend";font-weight:300;font-style:normal;font-display:swap;src:url("fonts/Lexend-Light.woff") format("woff")}@font-face{font-family:"Lexend";font-weight:400;font-style:normal;font-display:swap;src:url("fonts/Lexend-Regular.woff") format("woff")}@font-face{font-family:"Lexend";font-weight:500;font-style:normal;font-display:swap;src:url("fonts/Lexend-Medium.woff") format("woff")}@font-face{font-family:"Lexend";font-weight:600;font-style:normal;font-display:swap;src:url("fonts/Lexend-SemiBold.woff") format("woff")}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<script>if ("serviceWorker" in navigator && location.protocol === "https:") addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </head>
 <body>
 <title>BridgeLog</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap">
 <style>
 /* Layout: phone-first app shell. Student bar on top, one view at a time, quick-log buttons always one tap away. */
 /* Calm, low-glare palette: soft sage ground, muted lavender-blue accent, clay (not alarm red) for incidents. */
@@ -241,8 +239,14 @@ async function seal(obj, key=cryptoKey, salt=saltB64){
 async function unseal(env, key){ const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:fromB64(env.iv)}, key, fromB64(env.data)); return JSON.parse(new TextDecoder().decode(pt)); }
 // Returns "empty", "plain", or the encrypted envelope (which needs the passcode).
 function load(){ try{ const s=localStorage.getItem(KEY); if(!s) return "empty"; const o=JSON.parse(s); if (o && o.enc) return o; db=o; return "plain"; }catch(e){ return "empty"; } }
+function askPersist(){
+  const m=getMeta(); if (m.persistAsked || !navigator.storage?.persist) return;
+  if (!db.students.some(x=>!x.sample)) return;
+  setMeta({persistAsked:true}); navigator.storage.persist().then(ok=>setMeta({persisted:ok})).catch(()=>{});
+}
 function save(){
-  if (locked) return saveChain;           // never overwrite stored data while the app is locked
+  if (locked) return saveChain;
+  try{ askPersist(); }catch(e){}           // never overwrite stored data while the app is locked
   const snapshot = db, key = cryptoKey, salt = saltB64;
   saveChain = saveChain.then(async ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(key ? await seal(snapshot, key, salt) : snapshot)); }
     catch(e){ toast("Couldn't save on this device. Download a backup from the Data tab."); } });
@@ -521,6 +525,11 @@ function goalGrowth(entries){
 function vTimeline(){
   const v=$("#v-timeline"); v.replaceChildren();
   const all = mine(); if (!stu()){ v.append(emptyState()); return; }
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+  if (ios && !standalone && !getMeta().iosTipDone && !window.claude) v.append(el("div",{class:"note",style:"margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"},
+    "On iPhone or iPad, tap Share, then Add to Home Screen. Safari can clear saved data from websites you haven't opened in a while; home screen apps keep theirs.",
+    el("button",{type:"button",class:"small",onclick:()=>{ setMeta({iosTipDone:true}); vTimeline(); }},"Got it")));
   const real = db.students.some(x=>!x.sample) && db.entries.some(e=>{ const st=db.students.find(x=>x.id===e.student); return st && !st.sample; });
   const lb = getMeta().lastBackup, ago = lb ? Math.floor((Date.now()-lb)/864e5) : null;
   if (real && (lb==null || ago>=7)) v.append(el("div",{class:"note",style:"margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"},
@@ -747,7 +756,11 @@ function vData(){
       el("div",{class:"row"}, el("button",{type:"button",onclick:editStudent},"Edit behaviors and goals"))) : null,
     el("div",{class:"card stack"}, el("b",{},"Try it with example data"),
       el("p",{style:"margin:0;color:var(--muted)"},"Adds a made-up student with four weeks of entries so you can see every view filled in. You can delete them afterwards."),
-      el("div",{class:"row"}, el("button",{type:"button",onclick:()=>{ addSample(); render(); toast("Example student added"); }},"Add example student"),
+      el("div",{class:"row"}, db.students.some(x=>x.sample)
+          ? el("button",{type:"button",onclick:()=>{ const ids=new Set(db.students.filter(x=>x.sample).map(x=>x.id));
+              db.students=db.students.filter(x=>!ids.has(x.id)); db.entries=db.entries.filter(e=>!ids.has(e.student)); if (ids.has(db.current)) db.current=db.students[0]?.id||null;
+              save(); render(); toast("Example student removed. Your own students are untouched."); }},"Remove example student")
+          : el("button",{type:"button",onclick:()=>{ addSample(); render(); toast("Example student added"); }},"Add example student"),
         el("button",{type:"button",class:"ghost",onclick:askClear},"Delete everything")))));
 }
 function setPasscode(){

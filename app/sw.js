@@ -1,0 +1,16 @@
+// BridgeLog offline support: keeps a copy of the app itself so it opens without internet.
+// It never touches student data, which lives only in this browser's storage.
+const CACHE = "bridgelog-app-v1";
+const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png",
+  "./fonts/Lexend-Light.woff", "./fonts/Lexend-Regular.woff", "./fonts/Lexend-Medium.woff", "./fonts/Lexend-SemiBold.woff"];
+self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
+self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+// Serve from the saved copy right away, and refresh it in the background so updates arrive on the next open.
+self.addEventListener("fetch", e => {
+  if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
+  e.respondWith(caches.open(CACHE).then(async c => {
+    const hit = await c.match(e.request, {ignoreSearch: true});
+    const net = fetch(e.request).then(r => { if (r.ok) c.put(e.request, r.clone()); return r; }).catch(() => hit);
+    return hit || net;
+  }));
+});
