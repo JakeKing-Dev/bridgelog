@@ -286,7 +286,7 @@ function save(){
   if (locked) return saveChain;
   try{ askPersist(); }catch(e){}           // never overwrite stored data while the app is locked
   const snapshot = db, key = cryptoKey, salt = saltB64;
-  saveChain = saveChain.then(async ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(key ? await seal(snapshot, key, salt) : snapshot)); }
+  saveChain = saveChain.then(async ()=>{ try{ await extendChain(snapshot); localStorage.setItem(KEY, JSON.stringify(key ? await seal(snapshot, key, salt) : snapshot)); }
     catch(e){ toast("Couldn't save on this device. Download a backup from the Data tab."); } });
   return saveChain;
 }
@@ -313,7 +313,7 @@ function showLock(env){
   const inp = $("#lockPass"), msg = $("#lockMsg"); inp.value=""; msg.textContent=""; setTimeout(()=>inp.focus(), 50);
   $("#lockForm").onsubmit = async e => { e.preventDefault(); msg.textContent="Unlocking…";
     try{ const key = await deriveKey(inp.value, fromB64(env.salt)); const d = await unseal(env, key);
-      cryptoKey=key; saltB64=env.salt; db=d; locked=false; lastActive=Date.now(); box.hidden=true; inp.value=""; render(); }
+      cryptoKey=key; saltB64=env.salt; db=d; locked=false; lastActive=Date.now(); box.hidden=true; inp.value=""; render(); checkChainOnOpen(); }
     catch(err){ msg.textContent="That passcode didn't work. Try again."; inp.select(); } };
   $("#lockForgot").onclick = () => { const c=$("#lockConfirm"); c.hidden=false; };
   $("#lockErase").onclick = () => { try{ localStorage.removeItem(KEY); }catch(e){} cryptoKey=null; saltB64=null; locked=false; db={students:[],entries:[],current:null};
@@ -481,6 +481,72 @@ function logRestore(existing){
   });
 }
 
+
+// ---------------- record chain ----------------
+// Every entry is linked to the one before it by a SHA-256 fingerprint. Editing, deleting or reordering an
+// entry from a past day breaks the links, and BridgeLog says where. Notes, voids, kept/not-kept and
+// follow-ups are allowed later changes, so they're left out of the fingerprint.
+const CHAIN_SKIP = new Set(["addenda","voided","status","followups","ch","chFrom"]);
+const GENESIS = "0".repeat(64);
+let chainState = null;
+async function sha(text){ const b=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+function canon(e){ const o={}; Object.keys(e).filter(k=>!CHAIN_SKIP.has(k)).sort().forEach(k=>{ o[k]=e[k]; }); return JSON.stringify(o); }
+const linkOf = (prev, e) => sha(prev+"|"+canon(e));
+const chainCode = h => h && h!==GENESIS ? (h.slice(0,4)+"-"+h.slice(4,8)).toUpperCase() : "none yet";
+function chainItems(d){ return [...d.entries.filter(e=>e.ch).map(e=>({i:e.ch.i, e})), ...((d.chain&&d.chain.gone)||[]).map(g=>({i:g.i, g}))].sort((a,b)=>a.i-b.i); }
+async function extendChain(d){
+  if (!d || !Array.isArray(d.entries)) return;
+  const c = d.chain ||= {started: Date.now(), n: 0, head: GENESIS, gone: []};
+  const items = chainItems(d);
+  // Today's entries may still be edited, so their links are refreshed. Past days are never re-linked:
+  // a past entry whose content no longer matches its link is left as evidence.
+  const k = items.findIndex(it=>it.e && !isLocked(it.e));
+  if (k>=0){
+    let prev = items[k].e.ch.prev;
+    for (let j=k;j<items.length;j++){
+      const it=items[j];
+      if (it.g){ prev=it.g.h; continue; }
+      const e=it.e;
+      if (isLocked(e) && await linkOf(e.ch.prev, e)!==e.ch.h){ prev=e.ch.h; continue; }
+      if (e.ch.prev!==prev || !isLocked(e)){ e.ch.prev=prev; e.ch.h=await linkOf(prev, e); }
+      prev=e.ch.h;
+    }
+    c.head=prev;
+  }
+  const fresh = d.entries.filter(e=>!e.ch).sort((a,b)=>((a.c||a.t)-(b.c||b.t)) || String(a.id).localeCompare(String(b.id)));
+  for (const e of fresh){ const prev=c.head||GENESIS; const h=await linkOf(prev, e); e.ch={i:c.n, prev, h}; c.n++; c.head=h; }
+}
+async function verifyChain(d=db){
+  const c=d.chain;
+  if (!c) return {ok:true, n:0, problems:[], head:null, started:null};
+  const items=chainItems(d), problems=[]; let prev=GENESIS, expect=0, skipOrder=false;
+  for (const it of items){
+    if (it.i!==expect){ problems.push({kind:"missing", from:expect, to:it.i-1}); skipOrder=true; }
+    if (it.e){
+      const e=it.e;
+      if (e.ch.prev!==prev && !skipOrder) problems.push({kind:"order", e});
+      if (await linkOf(e.ch.prev, e)!==e.ch.h) problems.push({kind:"changed", e});
+      prev=e.ch.h;
+    } else prev=it.g.h;
+    skipOrder=false; expect=it.i+1;
+  }
+  if (expect < (c.n||0)) problems.push({kind:"missing", from:expect, to:c.n-1});
+  return {ok:!problems.length, n:items.length, kept:items.filter(x=>x.e).length, problems, head: prev===GENESIS?null:prev, started:c.started};
+}
+// Entries removed on purpose (Archive and remove, removing the example) keep their place in the chain.
+function chainRemove(entries, why){
+  const c=db.chain; if (!c) return;
+  const me=getMeta().me||"";
+  for (const e of entries) if (e.ch) c.gone.push({i:e.ch.i, h:e.ch.h, t:Date.now(), by:me, why});
+}
+function describeProblem(p){
+  const day=e=>new Date(e.t).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  if (p.kind==="missing") return p.from===p.to ? `Entry ${p.from+1} is missing.` : `Entries ${p.from+1} to ${p.to+1} are missing.`;
+  const [head]=describe(p.e);
+  return p.kind==="changed" ? `Changed after it locked: ${head} (${day(p.e)}).` : `Out of order: ${head} (${day(p.e)}).`;
+}
+async function checkChainOnOpen(){ try{ chainState = await verifyChain(); if (!chainState.ok) render(); }catch(e){ chainState=null; } }
+
 // ---------------- views ----------------
 const COLORS = {incident:"var(--incident)",win:"var(--win)",goal:"var(--goal)",restore:"var(--restore)",count:"var(--accent)",duration:"var(--accent)",interval:"var(--accent)",care:"var(--care)",seizure:"var(--incident)",emergency:"var(--incident)"};
 let filter = "all", showVoided = false, showSupports = null;   // supports stay hidden on screen until tapped, per student
@@ -595,6 +661,9 @@ function vTimeline(){
     k("Wins this week", w1.filter(e=>e.type==="win").length, w0.filter(e=>e.type==="win").length, true),
     el("div",{class:"kpi"}, el("b",{},gavg==null?"—":gavg+"%"), el("span",{},"Avg goal score this week")),
     el("div",{class:"kpi"}, el("b",{},String(all.filter(e=>e.type==="restore"&&e.status==="open").length)), el("span",{},"Open agreements"))));
+  if (chainState && !chainState.ok) v.append(el("div",{class:"todo",style:"margin-bottom:12px"}, el("b",{},"Some records don't match their fingerprints"),
+    el("span",{}, `${chainState.problems.length} problem${chainState.problems.length===1?"":"s"} found. Records may have been changed outside BridgeLog.`),
+    el("button",{type:"button",class:"small",onclick:()=>{ tab="data"; render(); }},"See details")));
   const due = dueFollowups(all); if (due) v.append(due);
   v.append(weekGrid(all), goalGrowth(all));
   const fl = el("div",{class:"chips",style:"margin-top:14px"});
@@ -715,7 +784,7 @@ function vSummary(){
 }
 // Same fingerprint for an entry whether or not later, allowed changes were made (notes, voiding, kept/not kept).
 async function fingerprint(e){
-  const {addenda, voided, status, followups, ...orig} = e;
+  const {addenda, voided, status, followups, ch, chFrom, ...orig} = e;
   const canon = JSON.stringify(Object.keys(orig).sort().reduce((o,k)=>(o[k]=orig[k],o),{}));
   return toB64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canon)));
 }
@@ -774,7 +843,7 @@ function mergeIn(data){
   }
   for (const e of data.entries){
     const mine = db.entries.find(x=>x.id===e.id);
-    if (!mine){ db.entries.push(JSON.parse(JSON.stringify(e))); r.newEntries++; continue; }
+    if (!mine){ const x=JSON.parse(JSON.stringify(e)); if (x.ch){ x.chFrom=x.ch; delete x.ch; } db.entries.push(x); r.newEntries++; continue; }
     const have = new Set((mine.addenda||[]).map(a=>a.t+"|"+a.text));
     for (const a of (e.addenda||[])) if (!have.has(a.t+"|"+a.text)){ (mine.addenda ||= []).push(a); r.newNotes++; }
     if (mine.addenda) mine.addenda.sort((a,b)=>a.t-b.t);
@@ -830,12 +899,36 @@ function archiveStudent(s){
     if (!got.csv && !got.json){ msg.textContent="Save the archive first."; return; }
     if (!ack.checked){ msg.textContent="Confirm the archive is where your school keeps student records."; return; }
     if (typed.value.trim()!==s.name){ msg.textContent=`Type ${s.name} exactly to confirm.`; return; }
-    db.students = db.students.filter(x=>x.id!==s.id); db.entries = db.entries.filter(e=>e.student!==s.id);
+    chainRemove(db.entries.filter(e=>e.student===s.id), `Archived and removed (${s.name})`); db.students = db.students.filter(x=>x.id!==s.id); db.entries = db.entries.filter(e=>e.student!==s.id);
     if (db.current===s.id) db.current = db.students[0]?.id || null;
     const m=getMeta(); setMeta({removals:[...(m.removals||[]), {t:Date.now(), name:s.name, entries:entries.length, note:where.value.trim()}]});
     await save(); dlg.close(); render(); toast(`${s.name} removed from this device. The archive has the records.`);
   };
   (dlg.open||dlg.showModal());
+}
+function chainBox(){
+  const box=el("div",{class:"stack",style:"gap:8px"}, el("p",{class:"status",style:"margin:0"},"Checking every record…"));
+  const code=el("input",{id:"chainCode",placeholder:"e.g. 4F2A-91C0",maxlength:"9",autocomplete:"off",style:"max-width:12em"});
+  const ans=el("p",{role:"status",style:"margin:0;font-size:.9rem;min-height:1.2em"});
+  const checkCode=()=>{ const q=code.value.replace(/[^0-9a-f]/gi,"").toLowerCase(); if (q.length<8){ ans.textContent="Enter the 8-character code from the printout."; return; }
+    const hit=db.entries.filter(e=>e.ch && e.ch.h.startsWith(q))[0];
+    if (!hit){ ans.textContent="No record on this device matches that code. The printout came from another device, or the records it covered have changed."; return; }
+    const bad=(chainState&&chainState.problems||[]).some(pr=>pr.e ? pr.e.ch.i<=hit.ch.i : pr.from<=hit.ch.i);
+    ans.textContent = bad ? "The code matches, but records from before it no longer match their fingerprints. See the problems above."
+      : `Matches. The printout came from these records, and the ${hit.ch.i+1} entr${hit.ch.i===0?"y":"ies"} up to ${new Date(hit.c||hit.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})} are unchanged.`; };
+  verifyChain().then(r=>{ chainState=r; const kids=[];
+    if (!r.n){ kids.push(el("p",{style:"margin:0;color:var(--muted)"},"Every entry you log is fingerprinted and linked to the one before it, so a change to a past record shows up here.")); }
+    else if (r.ok){ kids.push(el("div",{class:"status"}, el("i",{style:"background:var(--win)"}), `All ${r.kept} records match their fingerprints`),
+      el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},`Every entry is linked to the one before it, so changing, deleting or reordering a past record would show up here. Records fingerprinted since ${new Date(r.started).toLocaleDateString(undefined,{dateStyle:"medium"})}${(db.chain.gone||[]).length?`; ${db.chain.gone.length} removed on purpose (archived or example data)`:""}.`),
+      el("p",{style:"margin:0;font-size:.9rem"}, "Current fingerprint: ", el("b",{style:"font-family:var(--mono);letter-spacing:.04em"},chainCode(r.head)), el("span",{style:"color:var(--muted)"}," · printouts carry this code, so anyone can later confirm a printout matches these records.")));
+    } else {
+      kids.push(el("div",{class:"status"}, el("i",{style:"background:var(--incident)"}), `${r.problems.length} problem${r.problems.length===1?"":"s"} found`),
+        el("ul",{style:"margin:0;padding-left:18px"}, ...r.problems.slice(0,12).map(pr=>el("li",{},describeProblem(pr)))),
+        el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},"These records no longer match the fingerprints they were given, which happens if the stored data was edited outside BridgeLog. A backup from before the change has the originals; use the backup check below to compare."));
+    }
+    kids.push(el("label",{class:"f",for:"chainCode"},"Check a printout's fingerprint"), el("div",{class:"row",style:"align-items:center"}, code, el("button",{type:"button",onclick:checkCode},"Check")), ans);
+    box.replaceChildren(...kids); }).catch(()=>box.replaceChildren(el("p",{class:"status"},"Couldn't check the records on this browser.")));
+  return box;
 }
 function vData(){
   const v=$("#v-data"); v.replaceChildren();
@@ -901,7 +994,7 @@ function vData(){
       cryptoKey ? el("label",{class:"f"},"Lock after", lockSel) : null,
       el("div",{class:"row"}, cryptoKey ? el("button",{type:"button",onclick:()=>lockNow()},"Lock now") : el("button",{type:"button",class:"primary",onclick:setPasscode},"Turn on passcode"),
         cryptoKey ? el("button",{type:"button",class:"ghost",onclick:removePasscode},"Turn off passcode") : null)),
-    el("div",{class:"card stack"}, el("b",{},"Record check"),
+    el("div",{class:"card stack"}, el("b",{},"Record check"), chainBox(),
       el("p",{style:"margin:0;color:var(--muted)"},"Choose a backup file and BridgeLog checks that every record in it is still on this device and hasn't been changed since it locked. Notes, voids with a reason and kept-or-not updates are allowed changes and are listed separately."),
       el("div",{class:"row"}, el("button",{type:"button",onclick:()=>chk.click()},"Check records against a backup")), chk, out),
     s? el("div",{class:"card stack"}, el("b",{},`${s.name}'s setup`),
@@ -920,7 +1013,7 @@ function vData(){
       el("p",{style:"margin:0;color:var(--muted)"},"Adds a made-up student with four weeks of entries so you can see every view filled in. You can delete them afterwards."),
       el("div",{class:"row"}, db.students.some(x=>x.sample)
           ? el("button",{type:"button",onclick:()=>{ const ids=new Set(db.students.filter(x=>x.sample).map(x=>x.id));
-              db.students=db.students.filter(x=>!ids.has(x.id)); db.entries=db.entries.filter(e=>!ids.has(e.student)); if (ids.has(db.current)) db.current=db.students[0]?.id||null;
+              chainRemove(db.entries.filter(e=>ids.has(e.student)), "Example student removed"); db.students=db.students.filter(x=>!ids.has(x.id)); db.entries=db.entries.filter(e=>!ids.has(e.student)); if (ids.has(db.current)) db.current=db.students[0]?.id||null;
               save(); render(); toast("Example student removed. Your own students are untouched."); }},"Remove example student")
           : el("button",{type:"button",onclick:()=>{ addSample(); render(); toast("Example student added"); }},"Add example student"),
         el("button",{type:"button",class:"ghost",onclick:askClear},"Delete everything")))));
@@ -1494,7 +1587,7 @@ function progressHTML(s, entries, from, to){
     }
     b+=extra.map(x=>`<p>${esc(x)}</p>`).join("")+`</div>`;
   }
-  b+=`<p class="foot">Prepared from BridgeLog records kept on a school device. Figures reflect what was logged: a day with no entries is a gap in logging, not necessarily in behavior. It contains only logged data, not the IEP itself.</p>`;
+  b+=`<p class="foot">Prepared from BridgeLog records kept on a school device. Figures reflect what was logged: a day with no entries is a gap in logging, not necessarily in behavior. It contains only logged data, not the IEP itself.</p><p class="foot">Record fingerprint: <b>${chainCode(db.chain&&db.chain.head)}</b>. In BridgeLog, Data tab, enter this code to confirm this page matches the records it came from.</p>`;
   return pageHTML(`Goal data summary, ${s.name}`, b);
 }
 function berHTML(e){
@@ -1505,7 +1598,7 @@ function berHTML(e){
   b+=`</table><h2>Follow-up</h2><table>${row("Forwarded to administrator", f.admin?fmtDT(f.admin.t):"")}${row("Parent or guardian notified", f.parent?fmtDT(f.parent.t):"")}${e.bip==="No"?row("IEP team meeting scheduled", f.iep?fmtDT(f.iep.t):""):""}</table>`;
   if ((e.addenda||[]).length) b+=`<h2>Added notes</h2><table>${e.addenda.map(a=>row(fmtDT(a.t)+(a.by?` · ${a.by}`:""), a.text)).join("")}</table>`;
   b+=`<div class="sig"><div>Staff signature and date</div><div>Administrator signature and date</div></div><div class="sig"><div>Parent or guardian signature and date</div></div>
-  <p class="foot">California Education Code 56521.1 requires a behavioral emergency report to be completed immediately, kept in the student's file and forwarded to a designated administrator, with the parent or guardian notified within one school day. Use your district's official form if it requires one; this page lists what BridgeLog recorded.</p>`;
+  <p class="foot">California Education Code 56521.1 requires a behavioral emergency report to be completed immediately, kept in the student's file and forwarded to a designated administrator, with the parent or guardian notified within one school day. Use your district's official form if it requires one; this page lists what BridgeLog recorded.</p><p class="foot">Record fingerprint: <b>${chainCode(db.chain&&db.chain.head)}</b>. In BridgeLog, Data tab, enter this code to confirm this page matches the records it came from.</p>`;
   return pageHTML(`Behavioral emergency report, ${s.name}`, b);
 }
 
@@ -1530,7 +1623,7 @@ document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("clic
 const boot = load();
 if (boot && boot.enc){ render(); showLock(boot); }
 else { if (!db.students.length && boot==="empty") addSample();   // first visit opens in a filled-in state
-  render(); }
+  render(); checkChainOnOpen(); }
 </script>
 
 </body>
