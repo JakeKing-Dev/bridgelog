@@ -103,8 +103,8 @@ button.small{padding:6px 10px;font-size:.82rem}
 .todo .done{color:var(--win)}
 #print{display:none}
 @media print{ body>*:not(#print){display:none!important} #print{display:block!important;color:#000} body{background:#fff!important} }
-nav.tabs{display:flex;gap:4px;margin-top:18px;border-bottom:1.5px solid var(--line);overflow-x:auto}
-nav.tabs button{border:0;border-radius:8px 8px 0 0;background:transparent;color:var(--muted);padding:10px 14px;white-space:nowrap}
+nav.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-top:18px;border-bottom:1.5px solid var(--line)}
+nav.tabs button{border:0;border-radius:8px 8px 0 0;background:transparent;color:var(--muted);padding:12px 14px;min-height:44px;white-space:nowrap}
 nav.tabs button[aria-selected="true"]{color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
 section.view{padding-top:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px}
@@ -202,7 +202,7 @@ dialog h2{margin:0;font-size:1.2rem}
     <button id="addStudentBtn" class="ghost" style="align-self:flex-end">+ Student</button>
   </div>
 
-  <div id="running" aria-live="polite"></div>
+  <div id="running"></div>
   <div class="quick" role="group" aria-label="Quick log">
     <button class="q-incident" data-log="incident"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.4 4.3 4.3 0 0 0 7 18z"/></svg>Incident<small>what happened, before & after</small></button>
     <button class="q-win" data-log="win"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12C12 8.2 9.4 5.5 5 5.5c0 4.2 2.8 6.5 7 6.5z"/><path d="M12 14.5c0-3.3 2.4-5.5 6.5-5.5 0 3.7-2.6 5.5-6.5 5.5z"/></svg>Win<small>a success worth noting</small></button>
@@ -250,7 +250,7 @@ const ANTECEDENTS = ["Demand or task given","Transition","Told no / item denied"
 const CONSEQUENCES = [
   ["Redirected to task","none"],["Break given","escape"],["Task removed or changed","escape"],["Left the area","escape"],
   ["Adult attention / talk","attention"],["Peer attention","attention"],["Item or activity given","tangible"],
-  ["Planned ignoring","sensory"],["Continued without response","sensory"],["Other","none"]];
+  ["Planned ignoring","none"],["Continued without response","none"],["Other","none"]];
 const FUNCTIONS = {escape:"Escape or avoid something",attention:"Get attention",tangible:"Get an item or activity",sensory:"Sensory / automatic"};
 const ACTIVITIES = ["Arrival","Morning work","Reading","Math","Specials","Lunch","Recess","Small group","Independent work","Dismissal","Other"];
 const WIN_SKILLS = ["Followed directions","Used a coping strategy","Asked for help","Asked for a break","Kind to a peer","Stayed with the task","Smooth transition","Tried something hard"];
@@ -294,8 +294,8 @@ function save(){
 let lastActive = Date.now();
 ["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{ lastActive=Date.now(); }, {passive:true}));
 const lockMinutes = () => getMeta().lockMinutes || 5;
-// No automatic lock while a timer is running: a seizure or break timer has to stay on screen. "Lock now" still works.
-const idleLock = () => cryptoKey && !locked && !(db.running||[]).length && Date.now()-lastActive > lockMinutes()*60e3;
+// A seizure or break timer has to stay on screen, so those keep the app unlocked. Other timers don't. "Lock now" always works.
+const idleLock = () => cryptoKey && !locked && !(db.running||[]).some(r=>r.kind==="seizure"||r.kind==="break") && Date.now()-lastActive > lockMinutes()*60e3;
 setInterval(()=>{ if (idleLock()) lockNow(); }, 20e3);
 document.addEventListener("visibilitychange",()=>{ if (document.visibilityState==="visible" && idleLock()) lockNow(); });
 async function lockNow(){
@@ -324,6 +324,9 @@ const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(3
 
 // ---------------- helpers ----------------
 const $ = s => document.querySelector(s);
+// Optional parts of a screen are passed as null; never let them print as the word "null".
+for (const P of [Element.prototype, DocumentFragment.prototype]) for (const m of ["replaceChildren","append","prepend"]){
+  const orig=P[m]; P[m]=function(...k){ return orig.apply(this, k.filter(x=>x!=null && x!==false)); }; }
 function el(tag, attrs={}, ...kids){ const e=document.createElement(tag);
   for (const k in attrs){ if(k==="class") e.className=attrs[k]; else if(k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else if(attrs[k]!==false && attrs[k]!=null) e.setAttribute(k, attrs[k]); }
   for (const kid of kids){ if (kid==null) continue; e.append(kid.nodeType ? kid : document.createTextNode(kid)); } return e; }
@@ -331,7 +334,8 @@ const dayKey = t => { const d=new Date(t); return `${d.getFullYear()}-${String(d
 const fmtDay = k => new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
 const fmtTime = t => new Date(t).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
 const localInput = t => { const d=new Date(t); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); };
-function toast(msg){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const t=el("div",{class:"toast",role:"status"},msg); document.body.append(t); setTimeout(()=>t.remove(),2600); }
+function toast(msg){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const t=el("div",{class:"toast",role:"status"},msg);
+  const d=document.querySelector("dialog[open]"); (d||document.body).append(t); setTimeout(()=>t.remove(),3200); }
 const stu = () => db.students.find(s=>s.id===db.current);
 const allMine = () => db.entries.filter(e=>e.student===db.current).sort((a,b)=>b.t-a.t);
 const mine = () => allMine().filter(e=>!e.voided);
@@ -405,10 +409,16 @@ function chipGroup(name, options, value){
   if (value) g.dataset.value = value;
   return g;
 }
+let formDirty=false;
+const closeForm = () => { if (formDirty && !confirm("Discard what you've entered?")) return; formDirty=false; dlg.close(); };
+dlg.addEventListener("cancel", e=>{ if (formDirty){ e.preventDefault(); closeForm(); } });
+dlg.addEventListener("close", ()=>{ formDirty=false; });
 function openForm(title, body, onSave){
+  formDirty=false;
   form.replaceChildren(el("h2",{},title), ...body,
-    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Save")));
-  form.onsubmit = e => { e.preventDefault(); if (onSave()!==false){ const now=Date.now(), me=getMeta().me||""; db.entries.forEach(x=>{ if(!x.c){ x.c=now; if(me) x.by=me; } }); dlg.close(); save(); render(); } };
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:closeForm},"Cancel"), el("button",{type:"submit",class:"primary"},"Save")));
+  form.oninput = () => { formDirty=true; }; form.onclick = e => { if (e.target.closest(".chip")) formDirty=true; };
+  form.onsubmit = e => { e.preventDefault(); if (onSave()!==false){ const now=Date.now(), me=getMeta().me||""; db.entries.forEach(x=>{ if(!x.c){ x.c=now; if(me) x.by=me; } }); formDirty=false; dlg.close(); save(); render(); } };
   (dlg.open||dlg.showModal()); const first = form.querySelector("input,textarea,select"); if (first) first.focus();
 }
 const field = (label, input) => el("label",{class:"f"}, label, input);
@@ -433,7 +443,7 @@ function logIncident(){
   const behTxt = el("input",{id:"f-behtxt",placeholder:"Describe what you saw and heard"});
   const act = el("select",{id:"f-act"}, ...ACTIVITIES.map(a=>el("option",{},a)));
   const ant = chipGroup("Before", ANTECEDENTS), con = chipGroup("After", CONSEQUENCES.map(c=>c[0]));
-  const inten = chipGroup("Intensity", ["Low","Moderate","High"], "Low");
+  const inten = chipGroup("Intensity", ["Low","Moderate","High"]);
   const dur = el("input",{id:"f-dur",type:"number",min:"0",step:"1",inputmode:"numeric",placeholder:"minutes"});
   const notes = el("textarea",{id:"f-notes",placeholder:"Anything else the team should know"});
   openForm(`Incident · ${s.name}`,[ beh?field("Behavior",beh):null, field(beh?"Or describe it":"Behavior",behTxt),
@@ -574,7 +584,12 @@ function tidyExample(){
   }
   if (changed) save();
 }
-async function checkChainOnOpen(){ try{ tidyExample(); chainState = await verifyChain(); if (!chainState.ok) render(); }catch(e){ chainState=null; } }
+function migrateMeta(){
+  const m=getMeta(); if (!(m.removals||[]).some(r=>r.name||r.note)) return;
+  db.removalLog = [...(db.removalLog||[]), ...m.removals.filter(r=>r.name).map(r=>({t:r.t, name:r.name, entries:r.entries, note:r.note||""}))];
+  setMeta({removals:m.removals.map(r=>({t:r.t, entries:r.entries}))}); save();
+}
+async function checkChainOnOpen(){ try{ migrateMeta(); tidyExample(); chainState = await verifyChain(); if (!chainState.ok) render(); }catch(e){ chainState=null; } }
 
 // ---------------- views ----------------
 const COLORS = {incident:"var(--incident)",win:"var(--win)",goal:"var(--goal)",restore:"var(--restore)",count:"var(--accent)",duration:"var(--accent)",interval:"var(--accent)",care:"var(--care)",seizure:"var(--incident)",emergency:"var(--incident)"};
@@ -857,22 +872,26 @@ async function saveFile(name, text, type){
   const a=el("a",{href:URL.createObjectURL(new Blob([text],{type})),download:name}); document.body.append(a); a.click(); a.remove(); return true;
 }
 function toCSV(entries){
-  const rows=[["student","type","date","time","entered","logged by","detail","value","activity","before","after","intensity","minutes","score","notes","added notes","voided"]];
+  const rows=[["student","type","date","time","entered","logged by","detail","value","activity","before","after","intensity","minutes","score","notes","added notes","voided","all details"]];
+  const SKIP=new Set(["id","student","type","t","c","by","ch","chFrom","addenda","voided"]);
+  const all = e => { const o={}; for (const k in e) if (!SKIP.has(k) && e[k]!=="" && e[k]!=null) o[k]=e[k]; return Object.keys(o).length ? JSON.stringify(o) : ""; };
+  const cell = x => { let v=String(x??""); if (/^[=+\-@\t\r]/.test(v)) v="'"+v; return `"${v.replace(/"/g,'""')}"`; };
   entries.slice().sort((a,b)=>a.t-b.t).forEach(e=>{ const st=db.students.find(x=>x.id===e.student); const d=new Date(e.t);
-    rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.by||"",e.behavior||e.skill||e.goal||e.agreement||e.care||(e.interventions||[]).join("; ")||"",csvValue(e),e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",[e.description||e.saw, e.notes||e.what].filter(Boolean).join(" · "),(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+(a.by?` (${a.by})`:"")+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):""]); });
-  return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+    rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.by||"",e.behavior||e.skill||e.goal||e.agreement||e.care||(e.interventions||[]).join("; ")||"",csvValue(e),e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",[e.description||e.saw, e.notes||e.what].filter(Boolean).join(" · "),(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+(a.by?` (${a.by})`:"")+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):"",all(e)]); });
+  return rows.map(r=>r.map(cell).join(",")).join("\n");
 }
 // Merge never replaces what's here: originals stay as they are, new entries are added, notes and voids combine.
 function mergeIn(data){
-  const r={newEntries:0,newNotes:0,newStudents:0};
+  const r={newEntries:0,newNotes:0,newStudents:0,joined:0}, idMap={};
   for (const st of data.students){
-    const mine = db.students.find(x=>x.id===st.id);
+    let mine = db.students.find(x=>x.id===st.id);
+    if (!mine){ const same=db.students.find(x=>!x.sample && x.name.trim().toLowerCase()===String(st.name).trim().toLowerCase()); if (same){ mine=same; idMap[st.id]=same.id; r.joined++; } }
     if (!mine){ db.students.push({...st}); r.newStudents++; }
     else { mine.supports=[...new Set([...(mine.supports||[]),...(st.supports||[])])]; mine.behaviors=[...new Set([...(mine.behaviors||[]),...(st.behaviors||[])])]; mine.goals=[...new Set([...(mine.goals||[]),...(st.goals||[])])]; }
   }
   for (const e of data.entries){
     const mine = db.entries.find(x=>x.id===e.id);
-    if (!mine){ const x=JSON.parse(JSON.stringify(e)); if (x.ch){ x.chFrom=x.ch; delete x.ch; } db.entries.push(x); r.newEntries++; continue; }
+    if (!mine){ const x=JSON.parse(JSON.stringify(e)); if (idMap[x.student]) x.student=idMap[x.student]; if (x.ch){ x.chFrom=x.ch; delete x.ch; } db.entries.push(x); r.newEntries++; continue; }
     const have = new Set((mine.addenda||[]).map(a=>a.t+"|"+a.text));
     for (const a of (e.addenda||[])) if (!have.has(a.t+"|"+a.text)){ (mine.addenda ||= []).push(a); r.newNotes++; }
     if (mine.addenda) mine.addenda.sort((a,b)=>a.t-b.t);
@@ -889,10 +908,13 @@ function shareStudent(s){
     el("p",{class:"note"},"This makes an encrypted file with this student's entries. Send it the way your school sends student records, like school email or a school drive. Tell your teammate the share passcode in person or by phone, never in the same message as the file."),
     field("Share passcode (6 or more characters)",p1), field("Type it again",p2), msg,
     el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Make the file")));
+  if (!getMeta().me){ const mi=el("input",{id:"shMe",maxlength:"12",placeholder:"e.g. J.K."}); form.insertBefore(field("Your initials (so your teammate sees who logged these)",mi), msg); mi.addEventListener("change",()=>setMeta({me:mi.value.trim()})); }
   form.onsubmit = async ev => { ev.preventDefault();
+    if (!getMeta().me){ msg.textContent="Add your initials first."; return; }
     if (p1.value.length<6){ msg.textContent="Use at least 6 characters."; return; }
     if (p1.value!==p2.value){ msg.textContent="The two passcodes don't match."; return; }
     msg.textContent="Encrypting…";
+    const me=getMeta().me; db.entries.forEach(e=>{ if (e.student===s.id && !e.by) e.by=me; });
     const salt = crypto.getRandomValues(new Uint8Array(16)), key = await deriveKey(p1.value, salt);
     const payload = {kind:"share", from:getMeta().me||"", sharedAt:Date.now(), students:[s], entries:db.entries.filter(e=>e.student===s.id)};
     const text = JSON.stringify(await seal(payload, key, toB64(salt)));
@@ -914,6 +936,7 @@ function archiveStudent(s){
   form.replaceChildren(el("h2",{},`Archive and remove ${s.name}`),
     el("p",{class:"note"},`Your school decides how long behavior records must be kept. Save the archive and put it where your school keeps student records before removing anything. This removes ${entries.length} entr${entries.length===1?"y":"ies"} for ${s.name} from this device only.`),
     el("b",{},"1. Save the archive"),
+    el("p",{class:"note",style:"margin:0"}, "The BridgeLog file is required: it keeps every detail. The spreadsheet is an extra copy that's easier to read." + (cryptoKey ? " The BridgeLog file is encrypted with this device's current passcode, so store the passcode with your school's record of the archive." : "")),
     el("div",{class:"row"},
       el("button",{type:"button",onclick:async()=>{ if (await saveFile(`bridgelog-archive-${safe}-${dayKey(Date.now())}.csv`, toCSV(entries), "text/csv")){ got.csv=true; upd(); } }},"Spreadsheet (CSV)"),
       el("button",{type:"button",onclick:async()=>{ const payload={kind:"archive", archivedAt:Date.now(), students:[s], entries};
@@ -925,12 +948,13 @@ function archiveStudent(s){
     el("b",{},"3. Type the student's name to confirm"), typed, msg,
     el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},`Remove ${s.name}`)));
   form.onsubmit = async ev => { ev.preventDefault();
-    if (!got.csv && !got.json){ msg.textContent="Save the archive first."; return; }
+    if (!got.json){ msg.textContent="Save the BridgeLog file first. It's the complete archive."; return; }
     if (!ack.checked){ msg.textContent="Confirm the archive is where your school keeps student records."; return; }
     if (typed.value.trim()!==s.name){ msg.textContent=`Type ${s.name} exactly to confirm.`; return; }
     chainRemove(db.entries.filter(e=>e.student===s.id), `Archived and removed (${s.name})`); db.students = db.students.filter(x=>x.id!==s.id); db.entries = db.entries.filter(e=>e.student!==s.id);
     if (db.current===s.id) db.current = db.students[0]?.id || null;
-    const m=getMeta(); setMeta({removals:[...(m.removals||[]), {t:Date.now(), name:s.name, entries:entries.length, note:where.value.trim()}]});
+    (db.removalLog ||= []).push({t:Date.now(), name:s.name, entries:entries.length, note:where.value.trim()});
+    const m=getMeta(); setMeta({removals:[...(m.removals||[]).map(x=>({t:x.t, entries:x.entries})), {t:Date.now(), entries:entries.length}]});
     await save(); dlg.close(); render(); toast(`${s.name} removed from this device. The archive has the records.`);
   };
   (dlg.open||dlg.showModal());
@@ -944,17 +968,21 @@ function chainBox(){
     if (!hit){ ans.textContent="No record on this device matches that code. The printout came from another device, or the records it covered have changed."; return; }
     const bad=(chainState&&chainState.problems||[]).some(pr=>pr.e ? pr.e.ch.i<=hit.ch.i : pr.from<=hit.ch.i);
     ans.textContent = bad ? "The code matches, but records from before it no longer match their fingerprints. See the problems above."
-      : `Matches. The printout came from these records, and the ${hit.ch.i+1} entr${hit.ch.i===0?"y":"ies"} up to ${new Date(hit.c||hit.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})} are unchanged.`; };
+      : `Matches. The ${hit.ch.i+1} entr${hit.ch.i===0?"y":"ies"} on this device up to ${new Date(hit.c||hit.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})} are the ones the printout was made from, and they haven't changed. To check the printout's own numbers, compare it with a new printout for the same dates.`; };
   verifyChain().then(r=>{ chainState=r; const kids=[];
     if (!r.n){ kids.push(el("p",{style:"margin:0;color:var(--muted)"},"Every entry you log is fingerprinted and linked to the one before it, so a change to a past record shows up here.")); }
     else if (r.ok){ kids.push(el("div",{class:"status"}, el("i",{style:"background:var(--win)"}), `All ${r.kept} records match their fingerprints`),
       el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},`Every entry is linked to the one before it, so changing, deleting or reordering a past record would show up here. Records fingerprinted since ${new Date(r.started).toLocaleDateString(undefined,{dateStyle:"medium"})}${(db.chain.gone||[]).length?`; ${db.chain.gone.length} removed on purpose (archived or example data)`:""}.`),
-      el("p",{style:"margin:0;font-size:.9rem"}, "Current fingerprint: ", el("b",{style:"font-family:var(--mono);letter-spacing:.04em"},chainCode(r.head)), el("span",{style:"color:var(--muted)"}," · printouts carry this code, so anyone can later confirm a printout matches these records.")));
+      el("p",{style:"margin:0;font-size:.9rem"}, "Current fingerprint: ", el("b",{style:"font-family:var(--mono);letter-spacing:.04em"},chainCode(r.head)), el("span",{style:"color:var(--muted)"}," · printouts carry this code, which ties them to the records they were made from.")));
     } else {
       kids.push(el("div",{class:"status"}, el("i",{style:"background:var(--incident)"}), `${r.problems.length} problem${r.problems.length===1?"":"s"} found`),
         el("ul",{style:"margin:0;padding-left:18px"}, ...r.problems.slice(0,12).map(pr=>el("li",{},describeProblem(pr)))),
         el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},"These records no longer match the fingerprints they were given, which happens if the stored data was edited outside BridgeLog. A backup from before the change has the originals; use the backup check below to compare."));
     }
+    const mm=getMeta(), D=t=>new Date(t).toLocaleDateString(undefined,{dateStyle:"medium"});
+    const events=[...(mm.restores||[]).map(x=>({t:x.t, text: x.replaced ? `Replaced with a backup${x.from?` from ${D(x.from)}`:""}: ${x.removed} entr${x.removed===1?"y":"ies"} removed; backup fingerprints ${x.fingerprints}.` : `Merged a backup${x.from?` from ${D(x.from)}`:""}: ${x.added} entr${x.added===1?"y":"ies"} added.`})),
+      ...(mm.wipes||[]).map(x=>({t:x.t, text:`Everything deleted (${x.entries} entr${x.entries===1?"y":"ies"}).`}))].sort((a,b)=>a.t-b.t);
+    if (events.length) kids.push(el("p",{style:"margin:0;font-size:.9rem"},el("b",{},"On this device: "), events.map(x=>`${D(x.t)}: ${x.text}`).join(" ")));
     kids.push(el("label",{class:"f",for:"chainCode"},"Check a printout's fingerprint"), el("div",{class:"row",style:"align-items:center"}, code, el("button",{type:"button",onclick:checkCode},"Check")), ans);
     box.replaceChildren(...kids); }).catch(()=>box.replaceChildren(el("p",{class:"status"},"Couldn't check the records on this browser.")));
   return box;
@@ -976,8 +1004,7 @@ function vData(){
     try{ const {data, key, salt} = await readBackupFile(f);
       if(!Array.isArray(data.students)||!Array.isArray(data.entries)) throw new Error("That file isn't a BridgeLog backup.");
       if (data.kind==="share"||data.kind==="archive") throw new Error("That's a shared or archive file. Use \"Add a shared file\" so it merges in.");
-      const {savedAt, ...rest} = data; db = rest; if (key && !cryptoKey){ cryptoKey=key; saltB64=salt; }   // stay encrypted if the backup was
-      await save(); render(); toast("Backup restored"); }
+      confirmRestore(data, key, salt); }
     catch(e){ if (e.message!=="cancelled") toast(e.message); } });
   const chk = el("input",{type:"file",accept:"application/json,.json",id:"checkFile",style:"display:none"});
   const out = el("div",{id:"checkOut"});
@@ -1036,16 +1063,42 @@ function vData(){
       el("p",{style:"margin:0;color:var(--muted)"},"Share a student's log with your teacher or case manager as an encrypted file, sent the way your school already sends student records. Adding a shared file merges it in: nothing already here is replaced, and each entry shows who logged it."),
       el("label",{class:"f"},"Your initials (shown on entries you share)", meInput),
       el("div",{class:"row"}, el("button",{type:"button",onclick:()=>shareIn.click()},"Add a shared file")), shareIn),
-    (meta.removals||[]).length ? el("div",{class:"card stack"}, el("b",{},"Removal log"),
-      ...meta.removals.slice().reverse().map(r=>el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},`${new Date(r.t).toLocaleDateString(undefined,{dateStyle:"medium"})}: removed ${r.name} (${r.entries} entr${r.entries===1?"y":"ies"}) after archiving${r.note?` · ${r.note}`:""}`))) : null,
+    (db.removalLog||[]).length ? el("div",{class:"card stack"}, el("b",{},"Removal log"),
+      ...db.removalLog.slice().reverse().map(r=>el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},`${new Date(r.t).toLocaleDateString(undefined,{dateStyle:"medium"})}: removed ${r.name} (${r.entries} entr${r.entries===1?"y":"ies"}) after archiving${r.note?` · ${r.note}`:""}`))) : null,
     el("div",{class:"card stack"}, el("b",{},"Try it with example data"),
       el("p",{style:"margin:0;color:var(--muted)"},"Adds a made-up student with four weeks of entries so you can see every view filled in. You can delete them afterwards."),
       el("div",{class:"row"}, db.students.some(x=>x.sample)
           ? el("button",{type:"button",onclick:()=>{ const ids=new Set(db.students.filter(x=>x.sample).map(x=>x.id));
               chainRemove(db.entries.filter(e=>ids.has(e.student)), "Example student removed"); db.students=db.students.filter(x=>!ids.has(x.id)); db.entries=db.entries.filter(e=>!ids.has(e.student)); if (ids.has(db.current)) db.current=db.students[0]?.id||null;
               save(); render(); toast("Example student removed. Your own students are untouched."); }},"Remove example student")
-          : el("button",{type:"button",onclick:()=>{ addSample(); render(); toast("Example student added"); }},"Add example student"),
-        el("button",{type:"button",class:"ghost",onclick:askClear},"Delete everything")))));
+          : el("button",{type:"button",onclick:()=>{ addSample(); render(); toast("Example student added"); }},"Add example student"))),
+    el("div",{class:"card stack",style:"border-color:var(--incident-soft)"}, el("b",{},"Delete everything"),
+      el("p",{style:"margin:0;color:var(--muted)"},"Removes every student and entry from this device. You'll be asked to type DELETE, and offered a backup first."),
+      el("div",{class:"row"}, el("button",{type:"button",class:"ghost",onclick:askClear},"Delete everything on this device")))));
+}
+async function confirmRestore(data, key, salt){
+  const inBackup=new Set(data.entries.map(e=>e.id)), lost=db.entries.filter(e=>!inBackup.has(e.id) && !(db.students.find(x=>x.id===e.student)||{}).sample).length;
+  const vc = data.chain ? await verifyChain(data).catch(()=>({ok:false})) : null;
+  const chainNote = !data.entries.length ? "" : !vc ? "This backup has no record fingerprints, so BridgeLog can't confirm it wasn't edited." : vc.ok ? "" : "Some records in this backup don't match their fingerprints, so it may have been edited.";
+  const when = data.savedAt ? new Date(data.savedAt).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "an unknown date";
+  const msg=el("p",{role:"status",style:"margin:0;color:var(--incident);min-height:1.2em"});
+  form.replaceChildren(el("h2",{},"Restore a backup"),
+    el("p",{},`This backup is from ${when}: ${data.students.length} student${data.students.length===1?"":"s"}, ${data.entries.length} entr${data.entries.length===1?"y":"ies"}.`),
+    chainNote ? el("p",{class:"note",style:"color:var(--incident)"},chainNote) : null,
+    el("p",{class:"note"},"Merging keeps everything on this device and adds what's missing from the backup. Replacing makes this device match the backup exactly."),
+    lost ? el("p",{class:"note"},`Replacing would remove ${lost} entr${lost===1?"y":"ies"} on this device that ${lost===1?"isn't":"aren't"} in the backup. Download a backup of this device first if you might need ${lost===1?"it":"them"}.`) : null,
+    msg,
+    el("div",{class:"actions",style:"flex-wrap:wrap"},
+      el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"),
+      el("button",{type:"button",onclick:async()=>{ if (lost && !confirm(`Replace everything? ${lost} entr${lost===1?"y":"ies"} will be removed from this device.`)) return;
+        const {savedAt, ...rest}=data; db=rest; if (key && !cryptoKey){ cryptoKey=key; saltB64=salt; }
+        const m=getMeta(); setMeta({restores:[...(m.restores||[]), {t:Date.now(), from:data.savedAt||null, replaced:true, removed:lost, fingerprints: !vc?"missing":vc.ok?"intact":"problems"}]});
+        await save(); dlg.close(); render(); toast("Backup restored. This device now matches it."); }},"Replace everything"),
+      el("button",{type:"button",class:"primary",onclick:async()=>{ const r=mergeIn(data);
+        const m=getMeta(); setMeta({restores:[...(m.restores||[]), {t:Date.now(), from:data.savedAt||null, replaced:false, added:r.newEntries, fingerprints: !vc?"missing":vc.ok?"intact":"problems"}]});
+        await save(); dlg.close(); render(); toast(`Merged: ${r.newEntries} entr${r.newEntries===1?"y":"ies"} added, nothing removed.`); }},"Merge it in")));
+  form.onsubmit = e => e.preventDefault();
+  (dlg.open||dlg.showModal());
 }
 function setPasscode(){
   const p1 = el("input",{type:"password",id:"pc1",autocomplete:"new-password",minlength:"6",required:""});
@@ -1086,11 +1139,18 @@ function editStudent(){
     s.supports=sup.value.split(",").map(x=>x.trim()).filter(Boolean); s.routines=parseRoutines(rt.value); const m=Math.round(+sz.value); s.seizureAlert = m>=1&&m<=30 ? m : undefined; toast("Saved"); });
 }
 function askClear(){
-  const v=$("#v-data"); v.querySelector(".confirm")?.remove();
-  const c=el("div",{class:"confirm",role:"alert"},"This deletes every student and entry on this device. Download a backup first if you might need it.",
-    el("button",{type:"button",class:"small",onclick:()=>{ db={students:[],entries:[],current:null}; save(); render(); toast("Everything deleted"); }},"Delete everything"),
-    el("button",{type:"button",class:"small ghost",onclick:()=>c.remove()},"Cancel"));
-  v.prepend(c);
+  const n=db.entries.filter(e=>!(db.students.find(x=>x.id===e.student)||{}).sample).length;
+  const typed=el("input",{id:"clearTyped",autocomplete:"off",placeholder:"DELETE"}), msg=el("p",{role:"status",style:"margin:0;color:var(--incident);min-height:1.2em"});
+  form.replaceChildren(el("h2",{},"Delete everything on this device"),
+    el("p",{class:"note"},`This removes every student and all ${n} of your entries from this device. It can't be undone. Your school decides how long records must be kept: archive or back up first.`),
+    el("div",{class:"row"}, el("button",{type:"button",onclick:async()=>{ const payload={...db, savedAt:Date.now()}; const text=JSON.stringify(cryptoKey ? await seal(payload) : payload);
+      if (await saveFile(`bridgelog-backup-${dayKey(Date.now())}.json`, text, "application/json")) setMeta({lastBackup:Date.now()}); }},"Download a backup first")),
+    field("Type DELETE to confirm", typed), msg,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Delete everything")));
+  form.onsubmit = async e => { e.preventDefault(); if (typed.value.trim().toUpperCase()!=="DELETE"){ msg.textContent="Type DELETE to confirm."; return; }
+    const m=getMeta(); setMeta({wipes:[...(m.wipes||[]), {t:Date.now(), entries:n}]});
+    db={students:[],entries:[],current:null}; await save(); dlg.close(); render(); toast("Everything deleted from this device."); };
+  (dlg.open||dlg.showModal()); typed.focus();
 }
 function emptyState(){
   return el("div",{class:"card empty stack",style:"align-items:center"},
@@ -1226,7 +1286,8 @@ function runCard(r){
   const st=runStudent(r), who=st?st.name:"", big=el("div",{class:"big"},"0:00"), sub=el("div",{class:"who"});
   const card=el("div",{class:"run"}), add=(...k)=>card.append(...k.filter(x=>x!=null)), head=t=>el("div",{class:"rh"}, el("b",{},t), el("span",{class:"who"},who));
   const btn=(label,fn,cls="")=>el("button",{type:"button",class:cls,onclick:fn},label);
-  const discard=()=>btn("Discard",()=>{ endRun(r); toast("Discarded. Nothing was saved."); },"ghost");
+  const discard=()=>{ const b=btn("Discard",()=>{ if (b.dataset.armed){ endRun(r); toast("Discarded. Nothing was saved."); return; }
+      b.dataset.armed="1"; b.textContent="Tap again to discard"; setTimeout(()=>{ if (b.isConnected){ delete b.dataset.armed; b.textContent="Discard"; } },3000); },"ghost"); return b; };
   let update = now => { big.textContent = fmtDur(now-r.start); };
   if (r.kind==="tally"){
     const n=el("div",{class:"big"},String(r.taps.length));
@@ -1475,7 +1536,7 @@ function emergencyForm(e){
   const when=timeInput(); if (e) when.value=localInput(e.t);
   const mins=inp("minutes","minutes",{type:"number",min:"0",step:"1",inputmode:"numeric"});
   openForm(`Emergency intervention · ${s.name}`,[
-    el("p",{class:"note"},"California allows emergency interventions only for unpredictable, spontaneous behavior that poses a clear and present danger of serious physical harm, when a less restrictive response can't prevent it. Write what you saw and did, as soon as you can."),
+    el("p",{class:"note"},"California allows emergency interventions only for unpredictable, spontaneous behavior that poses a clear and present danger of serious physical harm, when a less restrictive response can't prevent it. Write what you saw and did, as soon as you can. This record helps you; it doesn't replace your district's behavioral emergency report form."),
     e?.timed ? el("p",{class:"note"},`Timed: started ${fmtTime(e.t)}, about ${e.minutes} min. Saved already.`) : el("div",{class:"row"}, field("Started",when), field("Length (minutes)",mins)),
     el("div",{class:"row"}, field("Student's age", inp("age","e.g. 9",{type:"number",min:"3",max:"22",inputmode:"numeric"})), field("Setting and location", inp("location","e.g. classroom, near the door"))),
     field("Staff and others involved (names and titles)", inp("staff","e.g. J. King, para; M. Lopez, teacher")),
@@ -1584,7 +1645,7 @@ function slopePerWeek(list){ if (list.length<3) return null; const xs=list.map(e
 function progressHTML(s, entries, from, to){
   const cur=inRange(entries, from, to), D=t=>new Date(t).toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"});
   const goals=cur.filter(e=>e.type==="goal"), names=[...new Set([...(s.goals||[]), ...goals.map(g=>g.goal)])];
-  let b=`<h1>Goal data summary: ${esc(s.name)}</h1><p class="sub">${D(from)} to ${D(to-1)} · for the case manager · prepared ${D(Date.now())}${getMeta().me?` by ${esc(getMeta().me)}`:""}</p>`;
+  let b=`<h1>Goal data summary: ${esc(s.name)}</h1><p class="sub">${D(from)} to ${D(to-1)} · for the case manager · prepared ${D(Date.now())} by ${getMeta().me?esc(getMeta().me):"________"}</p>`;
   for (const n of names){
     const list=goals.filter(g=>g.goal===n).sort((a,c)=>a.t-c.t);
     const tm=n.match(/(\d{1,3})\s*%/), target=tm?Math.min(100,+tm[1]):null;
@@ -1601,6 +1662,7 @@ function progressHTML(s, entries, from, to){
         const top=countBy(tr.filter(x=>x!=="I"),x=>x)[0];
         sentence+=` Independent responses: ${half(tr)}% overall`+(late.length&&early.length&&list.length>1?`, ${half(early)}% in the first half of the period and ${half(late)}% in the second`:"")+"."+(top?` The most common prompt needed was ${promptName(top[0]).toLowerCase()}.`:""); }
       b+=`<p>${esc(sentence)}</p>${goalChart(list, from, to, target)}`;
+      b+=`<table><tr><th>Date</th><th>Score</th><th>Detail</th></tr>${list.map(e=>`<tr><td>${esc(new Date(e.t).toLocaleDateString(undefined,{month:"short",day:"numeric"}))} ${esc(fmtTime(e.t))}</td><td>${e.score}%</td><td>${esc(e.trials?.length?`${e.trials.filter(x=>x==="I").length} of ${e.trials.length} independent`:e.steps?.length?`${e.steps.filter(x=>x.l==="I").length} of ${e.steps.length} steps independent`:(e.note||e.notes||""))}</td></tr>`).join("")}</table>`;
       const steps=list.filter(e=>e.steps?.length);
       if (steps.length){ const L=steps[steps.length-1]; b+=`<table><tr><th>Step</th><th>Latest prompt level (${esc(new Date(L.t).toLocaleDateString(undefined,{month:"short",day:"numeric"}))})</th></tr>${L.steps.map(x=>`<tr><td>${esc(x.s)}</td><td>${esc(x.l?promptName(x.l):"Not scored")}</td></tr>`).join("")}</table>`; }
     }
