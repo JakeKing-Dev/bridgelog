@@ -59,10 +59,10 @@ select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-vis
 button{font:500 .95rem var(--font);border-radius:var(--r);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px;cursor:pointer}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 button.ghost{background:transparent}
-button.small{padding:6px 10px;font-size:.82rem}
+button.small{padding:6px 10px;font-size:.82rem;min-height:44px}
 .quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
 .quick button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:16px;border-width:0;text-align:left;border-radius:20px}
-.quick button small{font-weight:400;font-size:.78rem;opacity:.85}
+.quick button small{font-weight:400;font-size:.78rem}
 .ic,.logo{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ic{width:30px;height:30px;margin-bottom:6px}
 .ic .dot{fill:currentColor}
@@ -85,6 +85,11 @@ button.small{padding:6px 10px;font-size:.82rem}
 .run .btns button{flex:1 1 120px;padding:14px}
 .run button.tap{font-size:1.5rem;padding:20px;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);flex:2 1 160px}
 .run .msg{font-size:.9rem}
+.run.min{padding:8px 14px;gap:0}
+.run.min .big{font-size:1.4rem}
+.run .foldrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.run .foldrow b{flex:1 1 auto}
+.run button.fold{padding:8px 12px;min-height:44px}
 .ask{display:flex;flex-direction:column;gap:8px;background:var(--accent-soft);border-radius:14px;padding:12px}
 .ask b{font-weight:500}
 .picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
@@ -97,7 +102,7 @@ button.small{padding:6px 10px;font-size:.82rem}
 #breakview .back{position:absolute;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px))}
 .seq{font:500 1.05rem var(--mono);letter-spacing:.04em;min-height:1.6em;overflow-wrap:anywhere}
 .stepq{display:flex;flex-direction:column;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--line)}
-.lvl .chip{min-width:38px;padding:7px 8px;text-align:center}
+.lvl .chip{min-width:44px;padding:7px 8px;text-align:center}
 .todo{display:flex;flex-direction:column;gap:8px;border:1.5px solid var(--incident);background:var(--incident-soft);border-radius:14px;padding:12px}
 .todo .item{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between}
 .todo .done{color:var(--win)}
@@ -124,7 +129,7 @@ section.view{padding-top:16px}
 .entry p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
 .entry .head{font-weight:500}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{font-size:.84rem;border:1.5px solid var(--line);border-radius:999px;padding:7px 12px;background:var(--surface);cursor:pointer;font-weight:400}
+.chip{font-size:.84rem;border:1.5px solid var(--line);border-radius:999px;padding:7px 12px;background:var(--surface);cursor:pointer;font-weight:400;min-height:44px}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:500}
 label.f{display:flex;flex-direction:column;gap:5px;font-size:.84rem;font-weight:500;color:var(--muted)}
 .bar{height:10px;border-radius:5px;background:var(--accent-soft);overflow:hidden}
@@ -337,7 +342,7 @@ const localInput = t => { const d=new Date(t); d.setMinutes(d.getMinutes()-d.get
 function toast(msg){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const t=el("div",{class:"toast",role:"status"},msg);
   const d=document.querySelector("dialog[open]"); (d||document.body).append(t); setTimeout(()=>t.remove(),3200); }
 const stu = () => db.students.find(s=>s.id===db.current);
-const allMine = () => db.entries.filter(e=>e.student===db.current).sort((a,b)=>b.t-a.t);
+const allMine = () => db.entries.filter(e=>e.student===db.current).sort((a,b)=>b.t-a.t || (b.c||0)-(a.c||0));
 const mine = () => allMine().filter(e=>!e.voided);
 const isLocked = e => dayKey(e.c||e.t) !== dayKey(Date.now());
 const pct = (a,b) => b ? Math.round(100*a/b) : 0;
@@ -429,7 +434,7 @@ function needStudent(){ if (!stu()){ addStudent(); return true; } return false; 
 function addStudent(){
   const nm = el("input",{id:"f-name",placeholder:"Initials or first name only, e.g. J.M.",required:"",maxlength:"40"});
   const beh = el("input",{id:"f-beh",placeholder:"e.g. leaving seat, hitting, refusal"});
-  const goals = el("textarea",{id:"f-goals",placeholder:"Short names, one per line, e.g. Coin ID (80%)"});
+  const goals = el("textarea",{id:"f-goals",placeholder:"Short names, one per line, e.g. Reads sight words (80%)"});
   const sup = el("input",{id:"f-sup",placeholder:"e.g. break card, first-then board, visual schedule"});
   openForm("Add a student",[field("Name",nm), field("Target behaviors (comma separated)",beh), field("Goals you take data on",goals), field("Supports you provide (comma separated)",sup),
     el("p",{class:"note"},"Add only what you need day to day: initials, short goal names and the supports you provide. The full IEP stays with the case manager.")], ()=>{
@@ -441,7 +446,7 @@ function logIncident(){
   if (needStudent()) return; const s=stu();
   const beh = s.behaviors.length ? chipGroup("Behavior", s.behaviors) : null;
   const behTxt = el("input",{id:"f-behtxt",placeholder:"Describe what you saw and heard"});
-  const act = el("select",{id:"f-act"}, ...ACTIVITIES.map(a=>el("option",{},a)));
+  const act = el("select",{id:"f-act"}, el("option",{value:""},"Choose…"), ...ACTIVITIES.map(a=>el("option",{},a)));
   const ant = chipGroup("Before", ANTECEDENTS), con = chipGroup("After", CONSEQUENCES.map(c=>c[0]));
   const inten = chipGroup("Intensity", ["Low","Moderate","High"]);
   const dur = el("input",{id:"f-dur",type:"number",min:"0",step:"1",inputmode:"numeric",placeholder:"minutes"});
@@ -449,7 +454,7 @@ function logIncident(){
   openForm(`Incident · ${s.name}`,[ beh?field("Behavior",beh):null, field(beh?"Or describe it":"Behavior",behTxt),
     el("div",{class:"row"}, field("When",timeInput()), field("Activity",act)),
     field("A · What happened right before",ant), field("C · What adults did right after",con),
-    el("div",{class:"row"}, field("Intensity",inten), field("Duration",dur)), field("Notes",notes)], ()=>{
+    el("div",{class:"row"}, field("Intensity",inten), field("How long (minutes)",dur)), field("Notes",notes)], ()=>{
       const behavior = behTxt.value.trim() || (beh && beh.dataset.value) || "";
       if (!behavior){ toast("Add the behavior first."); return false; }
       db.entries.push({id:uid(), student:s.id, type:"incident", t:readTime(), behavior, activity:act.value, antecedent:ant.dataset.value||"",
@@ -475,6 +480,8 @@ function goalPicker(s, id){
   const keep = el("input",{type:"checkbox",id:id+"-keep",checked:"",style:"width:auto"});
   const extra = el("div",{class:"stack",style:"gap:8px"}, txt, el("label",{style:"display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)"}, keep, `Add to ${s.name}'s goals`));
   const sync=()=>{ const isNew = !names.length || sel.value===NEW; extra.hidden=!isNew; sel.hidden=!names.length; if (isNew && document.activeElement===sel) setTimeout(()=>txt.focus(),0); };
+  const last = db.entries.filter(e=>e.student===s.id && e.type==="goal" && !e.steps && names.includes(e.goal)).sort((a,b)=>b.t-a.t)[0];
+  if (last) sel.value = last.goal;   // start on the goal worked on most recently
   sel.addEventListener("change", sync); sync();
   return {node: el("div",{class:"stack",style:"gap:8px"}, sel, extra),
     read(){ if (names.length && sel.value!==NEW) return sel.value;
@@ -486,11 +493,23 @@ function logGoal(){
   if (needStudent()) return; const s=stu();
   const g = goalPicker(s, "f-goal");
   const sc = el("input",{id:"f-score",type:"number",min:"0",max:"100",step:"1",inputmode:"numeric",placeholder:"e.g. 70",required:""});
-  const n = el("input",{id:"f-gnote",placeholder:"Prompts, setting, number of trials"});
-  openForm(`Goal data · ${s.name}`,[field("Goal",g.node), el("div",{class:"row"}, field("Score (%)",sc), field("When",timeInput())), field("Note",n)], ()=>{
-    const v = +sc.value; if (sc.value==="" || v<0 || v>100){ toast("Enter a score from 0 to 100."); return false; }
+  sc.removeAttribute("required");
+  const cor = el("input",{id:"f-cor",type:"number",min:"0",step:"1",inputmode:"numeric",placeholder:"8"});
+  const tot = el("input",{id:"f-tot",type:"number",min:"1",step:"1",inputmode:"numeric",placeholder:"10"});
+  const calc = ()=>{ const c=+cor.value, t=+tot.value; if (cor.value!=="" && tot.value!=="" && t>0 && c>=0 && c<=t){ sc.value=String(pct(c,t)); } };
+  cor.addEventListener("input",calc); tot.addEventListener("input",calc);
+  const n = el("input",{id:"f-gnote",placeholder:"Prompts, setting"});
+  openForm(`Goal data · ${s.name}`,[field("Goal",g.node),
+    el("div",{class:"row"}, field("Correct",cor), field("Out of",tot), field("Score (%)",sc)),
+    el("p",{class:"note",style:"margin-top:-4px"},"Type correct and out of, and the percent fills in. Or type the percent yourself."),
+    field("When",timeInput()), field("Note",n)], ()=>{
+    const c=cor.value===""?null:Math.round(+cor.value), t=tot.value===""?null:Math.round(+tot.value);
+    if ((c==null) !== (t==null)){ toast("Fill in both correct and out of, or neither."); return false; }
+    if (c!=null && !(t>0 && c>=0 && c<=t)){ toast("Correct has to be between 0 and out of."); return false; }
+    if (c!=null && sc.value!=="" && +sc.value!==pct(c,t)){ toast(`${c} of ${t} is ${pct(c,t)}%, but the score says ${sc.value}%. Fix one of them, or clear correct and out of.`); return false; }
+    const v = c!=null ? pct(c,t) : +sc.value; if (c==null && (sc.value==="" || v<0 || v>100)){ toast("Enter a score from 0 to 100, or correct and out of."); return false; }
     const goal=g.read(); if (!goal) return false;
-    db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal, score:v, notes:n.value.trim()}); toast("Goal data saved");
+    db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal, score:v, ...(c!=null?{correct:c,of:t}:{}), notes:n.value.trim()}); toast("Goal data saved");
   });
 }
 function logRestore(existing){
@@ -877,7 +896,7 @@ function toCSV(entries){
   const all = e => { const o={}; for (const k in e) if (!SKIP.has(k) && e[k]!=="" && e[k]!=null) o[k]=e[k]; return Object.keys(o).length ? JSON.stringify(o) : ""; };
   const cell = x => { let v=String(x??""); if (/^[=+\-@\t\r]/.test(v)) v="'"+v; return `"${v.replace(/"/g,'""')}"`; };
   entries.slice().sort((a,b)=>a.t-b.t).forEach(e=>{ const st=db.students.find(x=>x.id===e.student); const d=new Date(e.t);
-    rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.by||"",e.behavior||e.skill||e.goal||e.agreement||e.care||(e.interventions||[]).join("; ")||"",csvValue(e),e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",[e.description||e.saw, e.notes||e.what].filter(Boolean).join(" · "),(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+(a.by?` (${a.by})`:"")+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):"",all(e)]); });
+    rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.by||"",e.behavior||e.skill||e.goal||e.agreement||e.care||(e.interventions||[]).join("; ")||(e.type==="seizure"?e.kind:"")||"",csvValue(e),e.activity||"",e.antecedent||"",e.consequence||"",["","Low","Moderate","High"][e.intensity]||"",e.duration||"",e.score??"",[e.description||e.saw, e.notes||e.what].filter(Boolean).join(" · "),(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+(a.by?` (${a.by})`:"")+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):"",all(e)]); });
   return rows.map(r=>r.map(cell).join(",")).join("\n");
 }
 // Merge never replaces what's here: originals stay as they are, new entries are added, notes and voids combine.
@@ -898,7 +917,9 @@ function mergeIn(data){
     if (e.voided && (!mine.voided || e.voided.t < mine.voided.t)) mine.voided = e.voided;
     if (mine.type==="restore" && mine.status==="open" && e.status && e.status!=="open") mine.status = e.status;
   }
-  if (!db.current && db.students.length) db.current = db.students[0].id;
+  const firstIn = data.students[0] && (idMap[data.students[0].id] || data.students[0].id);
+  if (firstIn && db.students.some(x=>x.id===firstIn) && (r.newEntries || r.newStudents)) db.current = firstIn;
+  else if (!db.current && db.students.length) db.current = db.students[0].id;
   return r;
 }
 function shareStudent(s){
@@ -998,7 +1019,7 @@ function vData(){
   };
   const backup = async () => { const payload = {...db, savedAt:Date.now()}; const text = JSON.stringify(cryptoKey ? await seal(payload) : payload);
     if (await dl(`bridgelog-backup-${dayKey(Date.now())}.json`, text, "application/json")){ setMeta({lastBackup:Date.now()}); vData(); } };
-  const csv = () => toCSV(db.entries);
+  const csv = () => { const ex=new Set(db.students.filter(x=>x.sample).map(x=>x.id)); return toCSV(db.entries.filter(e=>!ex.has(e.student))); };
   const imp = el("input",{type:"file",accept:"application/json,.json",id:"importFile",style:"display:none"});
   imp.addEventListener("change", async ()=>{ const f=imp.files[0]; imp.value=""; if(!f) return;
     try{ const {data, key, salt} = await readBackupFile(f);
@@ -1222,7 +1243,9 @@ function parseRoutines(text){
 }
 function goalDetail(e){
   if (e.trials?.length){ const ind=e.trials.filter(x=>x==="I").length; return `Trials: ${e.trials.join(" ")} (${ind} of ${e.trials.length} independent)`; }
-  if (e.steps?.length){ const sc=e.steps.filter(x=>x.l), ind=sc.filter(x=>x.l==="I").length; return `${ind} of ${sc.length} steps independent`; }
+  if (e.steps?.length){ const sc=e.steps.filter(x=>x.l), ind=sc.filter(x=>x.l==="I").length, blank=e.steps.length-sc.length;
+    return `${ind} of ${sc.length} steps independent`+(blank?` (${blank} step${blank===1?"":"s"} not recorded)`:""); }
+  if (e.of) return `${e.correct} of ${e.of} correct`;
   return "";
 }
 function addEntry(e){ const me=getMeta().me; const rec={id:uid(), c:Date.now(), ...(me?{by:me}:{}), ...e}; db.entries.push(rec); return rec; }
@@ -1231,7 +1254,7 @@ function csvValue(e){
   if (e.type==="duration"||e.type==="seizure") return e.seconds!=null ? `${e.seconds} sec` : "";
   if (e.type==="interval") return `${e.pct}% of ${e.scored} intervals`;
   if (e.type==="emergency") return e.minutes!=null ? `${e.minutes} min` : "";
-  if (e.type==="goal") return `${e.score}%`;
+  if (e.type==="goal") return e.of ? `${e.score}% (${e.correct} of ${e.of})` : `${e.score}%`;
   return "";
 }
 const perHour = e => { const h=(e.end-e.t)/36e5; return h>=1/60 ? Math.round(e.count/h*10)/10 : null; };
@@ -1270,7 +1293,9 @@ async function keepAwake(on){ try{
   if (!on && wakeLock){ const w=wakeLock; wakeLock=null; await w.release(); } }catch(e){} }
 document.addEventListener("visibilitychange",()=>{ if (document.visibilityState==="visible" && (db.running||[]).length) keepAwake(true); });
 const running = () => (db.running ||= []);
-function startRun(r){ unlockAudio(); running().push({id:uid(), start:Date.now(), ...r}); save(); keepAwake(true); renderRunning(); }
+function startRun(r){ unlockAudio(); const run={id:uid(), start:Date.now(), ...r}; running().push(run); save(); keepAwake(true); renderRunning();
+  // Bring the new timer on screen and put focus on it, wherever the page was scrolled to.
+  setTimeout(()=>{ const c=document.querySelector(`#running [data-run="${run.id}"]`); if (!c) return; c.scrollIntoView({block:"center",behavior:"smooth"}); c.querySelector("button")?.focus({preventScroll:true}); }, 50); }
 function endRun(r){ db.running = running().filter(x=>x.id!==r.id); save(); if (!db.running.length) keepAwake(false); renderRunning(); }
 const runStudent = r => db.students.find(x=>x.id===r.student);
 
@@ -1284,7 +1309,7 @@ function renderRunning(){
 }
 function runCard(r){
   const st=runStudent(r), who=st?st.name:"", big=el("div",{class:"big"},"0:00"), sub=el("div",{class:"who"});
-  const card=el("div",{class:"run"}), add=(...k)=>card.append(...k.filter(x=>x!=null)), head=t=>el("div",{class:"rh"}, el("b",{},t), el("span",{class:"who"},who));
+  const card=el("div",{class:"run","data-run":r.id}), add=(...k)=>card.append(...k.filter(x=>x!=null)), head=t=>el("div",{class:"rh"}, el("b",{},t), el("span",{class:"who"},who));
   const btn=(label,fn,cls="")=>el("button",{type:"button",class:cls,onclick:fn},label);
   const discard=()=>{ const b=btn("Discard",()=>{ if (b.dataset.armed){ endRun(r); toast("Discarded. Nothing was saved."); return; }
       b.dataset.armed="1"; b.textContent="Tap again to discard"; setTimeout(()=>{ if (b.isConnected){ delete b.dataset.armed; b.textContent="Discard"; } },3000); },"ghost"); return b; };
@@ -1298,13 +1323,16 @@ function runCard(r){
   } else if (r.kind==="duration"){
     add(head(`Timing: ${r.behavior}`), big, el("div",{class:"btns"}, btn("Stop and save",()=>finishDuration(r),"primary"), discard()));
   } else if (r.kind==="interval"){
-    const L=r.sec*1000, i=Math.min(r.total, Math.floor((Date.now()-r.start)/L)), cur=i<r.total?i:null, p=i>=1 ? i-1 : null;
-    const pending = p!=null && r.marks[p]==null;
-    const Q = {partial:"Did it happen at any point in that interval?", whole:"Did it last the whole interval?", momentary:"Is it happening right now?"}[r.method];
+    const L=r.sec*1000, i=Math.min(r.total, Math.floor((Date.now()-r.start)/L)), cur=i<r.total?i:null;
+    const p = (()=>{ for (let j=0;j<i;j++) if (r.marks[j]==null && !(r.skipped||[]).includes(j)) return j; return null; })();
+    const pending = p!=null, waiting = pending ? r.marks.slice(0,i).filter((m,j)=>m==null && !(r.skipped||[]).includes(j)).length : 0;
+    const late = p!=null && p < i-1;
+    const Q = {partial:"Did it happen at any point in that interval?", whole:"Did it last the whole interval?", momentary: late ? "Was it happening when that interval ended?" : "Is it happening right now?"}[r.method];
     const yes = r.marks.filter(m=>m===true).length, scored=r.marks.filter(m=>m!=null).length;
     add(head(`${METHOD[r.method]}: ${r.behavior}`), el("div",{class:"rh"}, big, sub));
-    if (pending) add(el("div",{class:"ask",role:"alert"}, el("b",{},`Interval ${p+1}: ${Q}`),
-      el("div",{class:"btns"}, btn("Yes",()=>{ r.marks[p]=true; save(); renderRunning(); },"primary"), btn("No",()=>{ r.marks[p]=false; save(); renderRunning(); }))));
+    if (pending) add(el("div",{class:"ask",role:"alert"}, el("b",{},`Interval ${p+1}: ${Q}`), waiting>1 ? el("span",{class:"who"},`${waiting} intervals waiting for an answer`) : null,
+      el("div",{class:"btns"}, btn("Yes",()=>{ r.marks[p]=true; save(); renderRunning(); }), btn("No",()=>{ r.marks[p]=false; save(); renderRunning(); }),
+        btn("Didn't see it",()=>{ (r.skipped ||= []).push(p); save(); renderRunning(); },"ghost"))));
     if (cur!=null && r.method!=="momentary"){
       const marked = r.marks[cur];
       add(el("div",{class:"btns"}, r.method==="partial"
@@ -1322,7 +1350,8 @@ function runCard(r){
     add(head("Seizure timer"), big,
       el("p",{class:"msg",style:"margin:0"}, past ? `It's been ${r.alertMin||5} minutes. Follow ${who}'s seizure action plan now. Many plans call for rescue medicine or 911 at this point.`
         : `Stay with ${who}, keep them safe and note what you see. The alert sounds at ${r.alertMin||5} minutes${st?.seizureAlert?" (from their plan)":""}.`),
-      r.rescue ? el("p",{class:"msg",style:"margin:0"},`Rescue medicine given at ${fmtTime(r.rescue)} (${fmtMins(r.rescue-r.start)} in).`) : null,
+      r.rescue ? el("p",{class:"msg",style:"margin:0"},`Rescue medicine given at ${fmtTime(r.rescue)} (${fmtMins(r.rescue-r.start)} in). `,
+        el("button",{type:"button",class:"small ghost",onclick:()=>{ r.rescue=null; save(); renderRunning(); }},"Undo")) : null,
       el("div",{class:"btns"}, r.rescue?null:btn("Rescue medicine given",()=>{ r.rescue=Date.now(); save(); renderRunning(); }), btn("Seizure ended",()=>finishSeizure(r),"primary")));
   } else if (r.kind==="emergency"){
     card.classList.add("alert");
@@ -1333,6 +1362,16 @@ function runCard(r){
     add(head(`Break timer${r.then?` · then ${r.then}`:""}`), el("div",{class:"rh"}, big, el("span",{class:"who"},"left")),
       el("div",{class:"btns"}, btn("Show to student",()=>{ r.full=true; save(); renderRunning(); },"primary"), btn("End break",()=>finishBreak(r,true))));
     update = now => { big.textContent = fmtDur(r.mins*60e3-(now-r.start)+999); };
+  }
+  // Timers other than seizure and emergency can fold down to one line, so several can run without filling the screen.
+  const foldable = !["seizure","emergency"].includes(r.kind) && !card.querySelector(".ask");
+  if (foldable){
+    const fold=el("button",{type:"button",class:"small ghost fold","aria-expanded":String(!r.min)}, r.min?"Show":"Hide");
+    fold.onclick=()=>{ r.min=!r.min; save(); renderRunning(); };
+    if (r.min){
+      const title=card.querySelector(".rh b")?.textContent||"Timer", count = r.kind==="tally" ? el("span",{class:"big"},`${r.taps.length}×`) : null;
+      card.classList.add("min"); card.replaceChildren(el("div",{class:"foldrow"}, el("b",{},title), el("span",{class:"who"},who), count, big, fold));
+    } else card.querySelector(".rh")?.append(fold);
   }
   runRefs[r.id] = {update};
   return card;
@@ -1354,7 +1393,8 @@ function tick(quiet){
     const ms=now-r.start;
     if (r.kind==="interval"){ const L=r.sec*1000, i=Math.min(r.total, Math.floor(ms/L));
       if (i>(r.beeped??0)){ r.beeped=i; if (r.marks[i-1]==null) chime(); save(); if(!quiet){ renderRunning(); return; } }
-      if (i>=r.total && (r.marks[r.total-1]!=null || ms > r.total*L + Math.max(20e3,L))){ finishInterval(r,false); return; } }
+      const open = r.marks.filter((m,j)=>m==null && !(r.skipped||[]).includes(j)).length;
+      if (i>=r.total && (!open || ms > r.total*L + Math.max(120e3,L))){ finishInterval(r,false); return; } }
     if (r.kind==="seizure"){ const am=(r.alertMin||5)*60e3; if (ms>=am){ const k=Math.floor((ms-am)/60e3); if (k>(r.alertN??-1)){ r.alertN=k; chime("alert"); save(); if(!quiet){ renderRunning(); return; } } } }
     if (r.kind==="break" && ms>=r.mins*60e3){ finishBreak(r,false); return; }
     runRefs[r.id]?.update(now); runRefs[r.id+"-full"]?.update(now);
@@ -1455,7 +1495,7 @@ function logTrials(s){
   const g=goalPicker(s, "tr-goal");
   const trials=[], seq=el("div",{class:"seq","aria-live":"polite"}), stat=el("p",{style:"margin:0;color:var(--muted);font-size:.85rem"});
   const show=()=>{ seq.textContent = trials.length ? trials.join(" ") : "No trials yet"; const ind=trials.filter(x=>x==="I").length; stat.textContent = trials.length ? `${ind} of ${trials.length} independent (${pct(ind,trials.length)}%)` : "Tap the prompt level each trial needed."; };
-  const pad=el("div",{class:"chips lvl"}, ...PROMPTS.map(([c,n])=>el("button",{type:"button",class:"chip",title:n,"aria-label":n,onclick:()=>{ trials.push(c); show(); }},c)));
+  const pad=el("div",{class:"chips lvl"}, ...PROMPTS.map(([c,n])=>el("button",{type:"button",class:"chip",title:n,"aria-label":`${c}, ${n}`,onclick:()=>{ trials.push(c); show(); }},c)));
   const n=el("input",{id:"tr-note",placeholder:"Setting, materials, anything to note"});
   openForm(`Trials · ${s.name}`,[field("Goal",g.node), el("b",{},"Prompt level for each trial"), pad,
     el("p",{style:"margin:0;font-size:.78rem;color:var(--muted)"}, PROMPTS.map(([c,n])=>`${c} = ${n}`).join(" · ")), seq, stat,
@@ -1484,6 +1524,7 @@ function logSteps(s){
   openForm(`Skill steps · ${s.name}`,[field("Routine",sel), el("p",{style:"margin:0;font-size:.78rem;color:var(--muted)"}, PROMPTS.map(([c,n])=>`${c} = ${n}`).join(" · ")), box, field("When",timeInput()), field("Note",n)], ()=>{
     const r=rs[+sel.value], steps=r.steps.map((x,i)=>({s:x, l:groups[i].dataset.value||""})), sc=steps.filter(x=>x.l);
     if (!sc.length){ toast("Mark the prompt level for at least one step."); return false; }
+    const blank=steps.length-sc.length; if (blank && !confirm(`${blank} step${blank===1?" isn't":"s aren't"} marked. Save anyway? The score will count only the marked steps.`)) return false;
     db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal:`${r.name} (skill steps)`, score:pct(sc.filter(x=>x.l==="I").length, sc.length), steps, notes:n.value.trim()}); toast("Skill steps saved");
   });
 }
@@ -1512,15 +1553,20 @@ function seizureForm(e){
   const notes=el("input",{id:"sz-notes",placeholder:"Anything else",value:e?.notes||""});
   const manual = !e?.timed;
   const when=timeInput(); if (e) when.value=localInput(e.t);
-  const len=el("input",{id:"sz-len",type:"number",min:"0",step:"1",inputmode:"numeric",placeholder:"seconds",value:e?.seconds??""});
+  const mmss = sec => sec==null ? "" : `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`;
+  const len=el("input",{id:"sz-len",inputmode:"numeric",placeholder:"min:sec, e.g. 2:30",value:mmss(e?.seconds),autocomplete:"off"});
   const rescue=el("input",{id:"sz-rescue",type:"datetime-local",value:e?.rescue?localInput(e.rescue):""});
   const head = e?.timed ? el("p",{class:"note"},`Timed: started ${fmtTime(e.t)}, lasted ${fmtMins(e.seconds*1000)}${e.rescue?`, rescue medicine at ${fmtTime(e.rescue)}`:""}. These times are saved already.`) : null;
-  openForm(`Seizure · ${s.name}`,[head, manual?el("div",{class:"row"}, field("Started",when), field("Length (seconds)",len)):null,
-    field("What it looked like",kind), field("What you saw",saw), field("Afterwards",after), manual?field("Rescue medicine given at (if given)",rescue):null,
+  openForm(`Seizure · ${s.name}`,[head, manual?el("div",{class:"row"}, field("Started",when), field("Length (min:sec)",len)):null,
+    field("What it looked like",kind), field("What you saw",saw), field("Afterwards",after), field(e?.timed?"Rescue medicine given at (fix the time if needed, or clear it)":"Rescue medicine given at (if given)",rescue),
     field("Notified",notified), field("Notes",notes),
     el("p",{class:"note"},"Follow the student's seizure action plan and your school's procedures. This log is a record, not medical guidance.")], ()=>{
       const rec = e || {id:uid(), student:s.id, type:"seizure"};
-      if (manual){ rec.t=readTime(); rec.seconds = len.value===""?null:Math.round(+len.value); const r=rescue.value?new Date(rescue.value).getTime():null; rec.rescue = r&&!isNaN(r)?r:null; }
+      if (manual){ const v=len.value.trim(), m=v.match(/^(\d{1,3}):([0-5]\d)$/);
+        if (v && !m){ toast("Type the length as minutes:seconds, like 2:30, or 0:45 for 45 seconds."); return false; }
+        rec.t=readTime(); rec.seconds = !v ? null : (+m[1])*60 + (+m[2]); }
+      // The field only holds minutes, so keep the exact original time unless it was actually changed.
+      if (!(e?.rescue && rescue.value===localInput(e.rescue))){ const r=rescue.value?new Date(rescue.value).getTime():null; rec.rescue = r&&!isNaN(r)?r:null; }
       Object.assign(rec,{kind:kind.dataset.value||"", saw:saw.value.trim(), after:after.dataset.value||"", notified:notified.values(), notes:notes.value.trim()});
       if (!e) db.entries.push(rec); toast("Seizure saved");
   });
@@ -1701,7 +1747,7 @@ function render(){
   if (db.current && !stu()) db.current = db.students[0]?.id || null;
   if (!db.current && db.students.length) db.current = db.students[0].id;
   sel.value = db.current || "";
-  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===tab)));
+  document.querySelectorAll("nav.tabs button").forEach(b=>{ const on=b.dataset.tab===tab; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; });
   Object.keys(views).forEach(k=>{ $("#v-"+k).hidden = k!==tab; });
   views[tab]();
   renderRunning();
@@ -1709,7 +1755,14 @@ function render(){
 $("#student").addEventListener("change", e=>{ db.current=e.target.value; showSupports=null; save(); render(); });
 $("#addStudentBtn").addEventListener("click", addStudent);
 document.querySelectorAll("[data-log]").forEach(b=>b.addEventListener("click",()=>({incident:logIncident,win:logWin,goal:logGoal,restore:()=>logRestore(),time:openTimers,care:openSupports})[b.dataset.log]()));
-document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{ tab=b.dataset.tab; render(); }));
+// Tabs follow the ARIA tabs pattern: each tab controls its panel, and arrow keys move between tabs.
+const tabBtns=[...document.querySelectorAll("nav.tabs button")];
+tabBtns.forEach((b,i)=>{ const panel=$("#v-"+b.dataset.tab); b.id="tab-"+b.dataset.tab; b.setAttribute("aria-controls", panel.id);
+  panel.setAttribute("role","tabpanel"); panel.setAttribute("aria-labelledby", b.id); panel.tabIndex=0;
+  b.addEventListener("click",()=>{ tab=b.dataset.tab; render(); });
+  b.addEventListener("keydown",e=>{ const k={ArrowRight:1,ArrowLeft:-1,Home:"first",End:"last"}[e.key]; if (k==null) return; e.preventDefault();
+    const j = k==="first" ? 0 : k==="last" ? tabBtns.length-1 : (i+k+tabBtns.length)%tabBtns.length;
+    tab=tabBtns[j].dataset.tab; render(); tabBtns[j].focus(); }); });
 const boot = load();
 if (boot && boot.enc){ render(); showLock(boot); }
 else { if (!db.students.length && boot==="empty") addSample();   // first visit opens in a filled-in state
