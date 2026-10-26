@@ -26,6 +26,7 @@
   --accent:#5b6fa8; --accent-ink:#fbfcf9; --accent-soft:#e6e9f4;
   --incident:#b06a4f; --incident-soft:#f4e6de; --win:#4f8a63; --win-soft:#e3efe4;
   --goal:#4f7fa6; --goal-soft:#e2ecf3; --restore:#8a6fa8; --restore-soft:#eee7f4;
+  --care:#3f7f7a; --care-soft:#dcefec;
   --font:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"Lexend",system-ui,sans-serif;
   --r:16px;
@@ -34,12 +35,12 @@
   --bg:#1c2228; --surface:#242b32; --ink:#e3e7e4; --muted:#a3aeac; --line:#353e46;
   --accent:#9fb0e0; --accent-ink:#1c2228; --accent-soft:#2c3446;
   --incident:#e0a48b; --incident-soft:#3d2f2a; --win:#97c9a4; --win-soft:#26362c;
-  --goal:#96bddb; --goal-soft:#26333e; --restore:#c3acdf; --restore-soft:#332c3d; color-scheme:dark}}
+  --goal:#96bddb; --goal-soft:#26333e; --restore:#c3acdf; --restore-soft:#332c3d; --care:#8fcfc6; --care-soft:#22373a; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#1c2228; --surface:#242b32; --ink:#e3e7e4; --muted:#a3aeac; --line:#353e46;
   --accent:#9fb0e0; --accent-ink:#1c2228; --accent-soft:#2c3446;
   --incident:#e0a48b; --incident-soft:#3d2f2a; --win:#97c9a4; --win-soft:#26362c;
-  --goal:#96bddb; --goal-soft:#26333e; --restore:#c3acdf; --restore-soft:#332c3d; color-scheme:dark}
+  --goal:#96bddb; --goal-soft:#26333e; --restore:#c3acdf; --restore-soft:#332c3d; --care:#8fcfc6; --care-soft:#22373a; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -59,7 +60,7 @@ button{font:500 .95rem var(--font);border-radius:var(--r);border:1.5px solid var
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 button.ghost{background:transparent}
 button.small{padding:6px 10px;font-size:.82rem}
-.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
 .quick button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:16px;border-width:0;text-align:left;border-radius:20px}
 .quick button small{font-weight:400;font-size:.78rem;opacity:.85}
 .ic,.logo{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -71,6 +72,37 @@ button.small{padding:6px 10px;font-size:.82rem}
 .q-win{background:var(--win-soft);color:var(--win)}
 .q-goal{background:var(--goal-soft);color:var(--goal)}
 .q-restore{background:var(--restore-soft);color:var(--restore)}
+.q-time{background:var(--accent-soft);color:var(--accent)}
+.q-care{background:var(--care-soft);color:var(--care)}
+#running{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+#running:empty{display:none}
+.run{background:var(--surface);border:2px solid var(--accent);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.run.alert{border-color:var(--incident);background:var(--incident-soft)}
+.run .rh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.run .who{font-size:.8rem;color:var(--muted)}
+.run .big{font:500 2.3rem/1.1 var(--mono);font-variant-numeric:tabular-nums}
+.run .btns{display:flex;gap:8px;flex-wrap:wrap}
+.run .btns button{flex:1 1 120px;padding:14px}
+.run button.tap{font-size:1.5rem;padding:20px;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);flex:2 1 160px}
+.run .msg{font-size:.9rem}
+.ask{display:flex;flex-direction:column;gap:8px;background:var(--accent-soft);border-radius:14px;padding:12px}
+.ask b{font-weight:500}
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.picker button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:14px}
+.picker small{font-weight:400;color:var(--muted);font-size:.78rem}
+#breakview{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));text-align:center}
+#breakview svg{width:min(70vw,52vh);height:auto}
+#breakview .left{font:400 3.2rem var(--mono);font-variant-numeric:tabular-nums}
+#breakview .then{font-size:1.5rem;color:var(--muted)}
+#breakview .back{position:absolute;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px))}
+.seq{font:500 1.05rem var(--mono);letter-spacing:.04em;min-height:1.6em;overflow-wrap:anywhere}
+.stepq{display:flex;flex-direction:column;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.lvl .chip{min-width:38px;padding:7px 8px;text-align:center}
+.todo{display:flex;flex-direction:column;gap:8px;border:1.5px solid var(--incident);background:var(--incident-soft);border-radius:14px;padding:12px}
+.todo .item{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.todo .done{color:var(--win)}
+#print{display:none}
+@media print{ body>*:not(#print){display:none!important} #print{display:block!important;color:#000} body{background:#fff!important} }
 nav.tabs{display:flex;gap:4px;margin-top:18px;border-bottom:1.5px solid var(--line);overflow-x:auto}
 nav.tabs button{border:0;border-radius:8px 8px 0 0;background:transparent;color:var(--muted);padding:10px 14px;white-space:nowrap}
 nav.tabs button[aria-selected="true"]{color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
@@ -151,6 +183,7 @@ dialog h2{margin:0;font-size:1.2rem}
 .confirm{border-radius:16px;border:1.5px solid var(--incident);background:var(--incident-soft);color:var(--incident);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 @media (max-width:620px){
   .quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .quick button{padding:14px}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
@@ -169,10 +202,13 @@ dialog h2{margin:0;font-size:1.2rem}
     <button id="addStudentBtn" class="ghost" style="align-self:flex-end">+ Student</button>
   </div>
 
+  <div id="running" aria-live="polite"></div>
   <div class="quick" role="group" aria-label="Quick log">
     <button class="q-incident" data-log="incident"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.4 4.3 4.3 0 0 0 7 18z"/></svg>Incident<small>what happened, before & after</small></button>
     <button class="q-win" data-log="win"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12C12 8.2 9.4 5.5 5 5.5c0 4.2 2.8 6.5 7 6.5z"/><path d="M12 14.5c0-3.3 2.4-5.5 6.5-5.5 0 3.7-2.6 5.5-6.5 5.5z"/></svg>Win<small>a success worth noting</small></button>
     <button class="q-goal" data-log="goal"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" class="dot"/></svg>Goal data<small>score toward an IEP goal</small></button>
+    <button class="q-time" data-log="time"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.6 2.4"/><path d="M9.5 2.8h5"/><path d="M12 2.8V6"/></svg>Count & time<small>tally, duration, intervals, breaks</small></button>
+    <button class="q-care" data-log="care"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.3-7-9.8A3.9 3.9 0 0 1 12 7.8a3.9 3.9 0 0 1 7 2.4C19 15.7 12 20 12 20z"/></svg>Supports<small>prompt levels, care, seizures, emergencies</small></button>
     <button class="q-restore" data-log="restore"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg>Restorative<small>conversation & agreement</small></button>
   </div>
 
@@ -192,6 +228,8 @@ dialog h2{margin:0;font-size:1.2rem}
 </div>
 
 <dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+<div id="breakview" hidden></div>
+<div id="print"></div>
 <div id="lock" hidden>
   <form id="lockForm" class="lockcard" autocomplete="off">
     <svg class="logo" viewBox="0 0 24 24" aria-hidden="true" style="width:44px;height:44px"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg>
@@ -256,8 +294,10 @@ function save(){
 let lastActive = Date.now();
 ["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{ lastActive=Date.now(); }, {passive:true}));
 const lockMinutes = () => getMeta().lockMinutes || 5;
-setInterval(()=>{ if (cryptoKey && !locked && Date.now()-lastActive > lockMinutes()*60e3) lockNow(); }, 20e3);
-document.addEventListener("visibilitychange",()=>{ if (document.visibilityState==="visible" && cryptoKey && !locked && Date.now()-lastActive > lockMinutes()*60e3) lockNow(); });
+// No automatic lock while a timer is running: a seizure or break timer has to stay on screen. "Lock now" still works.
+const idleLock = () => cryptoKey && !locked && !(db.running||[]).length && Date.now()-lastActive > lockMinutes()*60e3;
+setInterval(()=>{ if (idleLock()) lockNow(); }, 20e3);
+document.addEventListener("visibilitychange",()=>{ if (document.visibilityState==="visible" && idleLock()) lockNow(); });
 async function lockNow(){
   await saveChain;
   let env; try{ env = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
@@ -291,7 +331,7 @@ const dayKey = t => { const d=new Date(t); return `${d.getFullYear()}-${String(d
 const fmtDay = k => new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
 const fmtTime = t => new Date(t).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
 const localInput = t => { const d=new Date(t); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); };
-function toast(msg){ const t=el("div",{class:"toast",role:"status"},msg); document.body.append(t); setTimeout(()=>t.remove(),2600); }
+function toast(msg){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const t=el("div",{class:"toast",role:"status"},msg); document.body.append(t); setTimeout(()=>t.remove(),2600); }
 const stu = () => db.students.find(s=>s.id===db.current);
 const allMine = () => db.entries.filter(e=>e.student===db.current).sort((a,b)=>b.t-a.t);
 const mine = () => allMine().filter(e=>!e.voided);
@@ -343,6 +383,7 @@ function summarize(name, entries, from, to){
     const first = sorted[0].score, last = sorted[sorted.length-1].score;
     parts.push(`Goal "${goal}": ${sorted.length} data point${sorted.length===1?"":"s"}, averaging ${avg}%`+(sorted.length>1?`, moving from ${first}% to ${last}%.`:"."));
   }
+  parts.push(...moreSummary(cur));
   if (rs.length){
     const kept = rs.filter(r=>r.status==="kept").length, missed = rs.filter(r=>r.status==="missed").length, open = rs.length-kept-missed;
     parts.push(`${rs.length} restorative conversation${rs.length===1?" was":"s were"} held. Agreements: ${kept} kept, ${missed} not kept, ${open} still open.`);
@@ -368,7 +409,7 @@ function openForm(title, body, onSave){
   form.replaceChildren(el("h2",{},title), ...body,
     el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Save")));
   form.onsubmit = e => { e.preventDefault(); if (onSave()!==false){ const now=Date.now(), me=getMeta().me||""; db.entries.forEach(x=>{ if(!x.c){ x.c=now; if(me) x.by=me; } }); dlg.close(); save(); render(); } };
-  dlg.showModal(); const first = form.querySelector("input,textarea,select"); if (first) first.focus();
+  (dlg.open||dlg.showModal()); const first = form.querySelector("input,textarea,select"); if (first) first.focus();
 }
 const field = (label, input) => el("label",{class:"f"}, label, input);
 const timeInput = () => el("input",{type:"datetime-local",id:"f-time",value:localInput(Date.now())});
@@ -440,12 +481,13 @@ function logRestore(existing){
 }
 
 // ---------------- views ----------------
-const COLORS = {incident:"var(--incident)",win:"var(--win)",goal:"var(--goal)",restore:"var(--restore)"};
+const COLORS = {incident:"var(--incident)",win:"var(--win)",goal:"var(--goal)",restore:"var(--restore)",count:"var(--accent)",duration:"var(--accent)",interval:"var(--accent)",care:"var(--care)",seizure:"var(--incident)",emergency:"var(--incident)"};
 let filter = "all", showVoided = false;
 function describe(e){
   if (e.type==="incident") return [`${e.behavior}`, [e.activity, e.antecedent&&`Before: ${e.antecedent}`, e.consequence&&`After: ${e.consequence}`, e.intensity&&["","Low","Moderate","High"][e.intensity]+" intensity", e.duration?`${e.duration} min`:null, e.notes].filter(Boolean).join(" · ")];
   if (e.type==="win") return [`Win: ${e.skill||"Success"}`, e.what];
-  if (e.type==="goal") return [`${e.goal}: ${e.score}%`, e.notes];
+  if (e.type==="goal") return [`${e.goal}: ${e.score}%`, [goalDetail(e), e.notes].filter(Boolean).join(" · ")];
+  if (MORE_TYPES[e.type]) return MORE_TYPES[e.type].describe(e);
   return [`Restorative conversation`, (e.agreement?`Agreement: ${e.agreement}`:"") + (e.followUp?` · Check back ${new Date(e.followUp+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})}`:"")];
 }
 function chart(entries){
@@ -544,13 +586,15 @@ function vTimeline(){
     k("Wins this week", w1.filter(e=>e.type==="win").length, w0.filter(e=>e.type==="win").length, true),
     el("div",{class:"kpi"}, el("b",{},gavg==null?"—":gavg+"%"), el("span",{},"Avg goal score this week")),
     el("div",{class:"kpi"}, el("b",{},String(all.filter(e=>e.type==="restore"&&e.status==="open").length)), el("span",{},"Open agreements"))));
+  const due = dueFollowups(all); if (due) v.append(due);
   v.append(weekGrid(all), goalGrowth(all));
   const fl = el("div",{class:"chips",style:"margin-top:14px"});
-  [["all","Everything"],["incident","Incidents"],["win","Wins"],["goal","Goal data"],["restore","Restorative"]].forEach(([k,l])=>{
+  [["all","Everything"],["incident","Incidents"],["win","Wins"],["goal","Goal data"],["measure","Counts & timers"],["care","Care & safety"],["restore","Restorative"]].forEach(([k,l])=>{
     fl.append(el("button",{type:"button",class:"chip","aria-pressed":String(filter===k),onclick:()=>{filter=k; vTimeline();}},l)); });
   v.append(fl);
   fl.append(el("button",{type:"button",class:"chip","aria-pressed":String(showVoided),onclick:()=>{showVoided=!showVoided; vTimeline();}},"Show voided"));
-  const list = (showVoided ? allMine() : all).filter(e=>filter==="all"||e.type===filter);
+  const GROUPS = {measure:["count","duration","interval"], care:["care","seizure","emergency"]};
+  const list = (showVoided ? allMine() : all).filter(e=>filter==="all"||e.type===filter||GROUPS[filter]?.includes(e.type));
   if (!list.length){ v.append(el("p",{class:"empty"},"Nothing logged yet. Use the buttons above to add the first entry.")); return; }
   let cur=null, box=null;
   for (const e of list.slice(0,200)){
@@ -572,9 +616,10 @@ function viewEntry(e){
   add("Logged by", e.by);
   if (e.type==="incident"){ add("Behavior",e.behavior); add("Activity",e.activity); add("Before",e.antecedent); add("After",e.consequence); add("Intensity",["","Low","Moderate","High"][e.intensity||0]); add("Duration",e.duration?e.duration+" min":""); add("Notes",e.notes); }
   if (e.type==="win"){ add("Skill",e.skill); add("What happened",e.what); }
-  if (e.type==="goal"){ add("Goal",e.goal); add("Score",e.score+"%"); add("Note",e.notes); }
+  if (e.type==="goal"){ add("Goal",e.goal); add("Score",e.score+"%"); add("Detail",goalDetail(e)); (e.steps||[]).forEach((x,i)=>add(`Step ${i+1}: ${x.s}`, x.l?promptName(x.l):"Not scored")); add("Note",e.notes); }
+  if (MORE_TYPES[e.type]) MORE_TYPES[e.type].rows(e, add);
   if (e.type==="restore"){ RQ.forEach((q,i)=>add(q,e.answers?.[i])); add("Participants",e.who); add("Agreement",e.agreement); add("Check back on",e.followUp); add("Status",{open:"Open",kept:"Kept",missed:"Not kept"}[e.status]); }
-  const titles = {incident:"Incident",win:"Win",goal:"Goal data",restore:"Restorative conversation"};
+  const titles = {incident:"Incident",win:"Win",goal:"Goal data",restore:"Restorative conversation",count:"Tally count",duration:"Duration",interval:"Interval recording",care:"Care log",seizure:"Seizure",emergency:"Emergency intervention"};
   const banner = e.voided ? el("div",{class:"confirm"}, `Voided ${new Date(e.voided.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})}: ${e.voided.reason}. Kept for the record and left out of patterns and summaries.`)
     : el("p",{class:"note"}, locked ? "This entry is locked because the day it was entered has passed. You can add a dated note below, but the original can't be changed or removed."
                                      : "You can void this entry until the end of today if it was a mistake. After that it locks for good.");
@@ -584,16 +629,18 @@ function viewEntry(e){
   const voidArea = el("div",{class:"stack",hidden:""}, field("Reason for voiding (required)", reason),
     el("div",{class:"actions"}, el("button",{type:"button",class:"small",onclick:()=>{ const r=reason.value.trim(); if(!r){ toast("Write a reason first."); return; }
       e.voided={t:Date.now(), reason:r}; save(); dlg.close(); render(); toast("Entry voided. It's kept for the record."); }},"Void this entry")));
-  form.replaceChildren(el("h2",{},titles[e.type]), banner, el("div",{class:"stack"}, ...rows),
+  form.replaceChildren(el("h2",{},titles[e.type]), banner, e.type==="emergency" ? emergencyFollowups(e) : null, el("div",{class:"stack"}, ...rows),
     history.length ? el("div",{class:"stack"}, el("b",{},"Added notes"), ...history) : null,
     field("Add a note", note), voidArea,
     el("div",{class:"actions"},
       (!locked && !e.voided) ? el("button",{type:"button",class:"ghost",onclick:()=>{ voidArea.hidden=false; reason.focus(); }},"Void entry…") : null,
+      (!locked && !e.voided && (e.type==="seizure"||e.type==="emergency")) ? el("button",{type:"button",class:"ghost",onclick:()=> e.type==="seizure" ? seizureForm(e) : emergencyForm(e)},"Edit details") : null,
+      e.type==="emergency" ? el("button",{type:"button",class:"ghost",onclick:()=>printOrSave(berHTML(e), `bridgelog-emergency-report-${dayKey(e.t)}.html`)},"Print report") : null,
       el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Close"),
       el("button",{type:"button",class:"primary",onclick:()=>{ const t=note.value.trim(); if(!t){ toast("Write the note first."); return; }
         (e.addenda ||= []).push({t:Date.now(), text:t, by:getMeta().me||""}); save(); dlg.close(); render(); toast("Note added"); }},"Add note")));
   form.onsubmit = ev => ev.preventDefault();
-  dlg.showModal();
+  (dlg.open||dlg.showModal());
 }
 function barList(title, rows, total){
   const c=el("div",{class:"card stack"}, el("b",{},title));
@@ -642,18 +689,24 @@ function vSummary(){
   const to = el("input",{type:"date",id:"s-to",value:dayKey(Date.now())});
   const from = el("input",{type:"date",id:"s-from",value:dayKey(Date.now()-13*864e5)});
   const out = el("div",{class:"card summary",id:"s-out"});
+  const range = ()=>{ const f=new Date(from.value+"T00:00").getTime(), t=new Date(to.value+"T00:00").getTime()+864e5; if (isNaN(f)||isNaN(t)||t<=f){ toast("Pick a start date before the end date."); return null; } return [f,t]; };
   const go = ()=>{ const f=new Date(from.value+"T00:00").getTime(), t=new Date(to.value+"T00:00").getTime()+864e5;
     out.textContent = (isNaN(f)||isNaN(t)||t<=f) ? "Pick a start date before the end date." : summarize(stu().name, mine(), f, t); };
   from.addEventListener("change",go); to.addEventListener("change",go);
   const copy = el("button",{type:"button",class:"primary",onclick:()=>{ navigator.clipboard.writeText(out.textContent).then(()=>toast("Summary copied"),()=>{ const r=document.createRange(); r.selectNodeContents(out); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Press copy on your device."); }); }},"Copy summary");
   v.append(el("div",{class:"row"}, field("From",from), field("To",to)), el("div",{style:"height:12px"}), out,
     el("div",{class:"actions",style:"margin-top:10px"}, copy),
+    el("div",{class:"card stack",style:"margin-top:14px"}, el("b",{},"IEP progress report"),
+      el("p",{style:"margin:0;color:var(--muted)"},"A printable page for these dates: each goal with its data, a chart and a plain-language sentence, plus behavior data, with space for the case manager's progress marking and comments."),
+      el("div",{class:"row"},
+        el("button",{type:"button",class:"primary",onclick:()=>{ const r=range(); if(r) printOrSave(progressHTML(stu(), mine(), r[0], r[1]), null); }},"Print"),
+        el("button",{type:"button",onclick:()=>{ const r=range(); if(r) saveFile(`bridgelog-progress-${(stu().name.replace(/[^A-Za-z0-9]+/g,"")||"student")}-${from.value}-to-${to.value}.html`, progressHTML(stu(), mine(), r[0], r[1]), "text/html").then(ok=>ok&&toast("Saved. Open it in any browser to add comments and print.")); }},"Save as file"))),
     el("p",{class:"note",style:"margin-top:10px"},"Read it over before sharing. It describes what was logged, so a gap in logging looks like a gap in behavior."));
   go();
 }
 // Same fingerprint for an entry whether or not later, allowed changes were made (notes, voiding, kept/not kept).
 async function fingerprint(e){
-  const {addenda, voided, status, ...orig} = e;
+  const {addenda, voided, status, followups, ...orig} = e;
   const canon = JSON.stringify(Object.keys(orig).sort().reduce((o,k)=>(o[k]=orig[k],o),{}));
   return toB64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canon)));
 }
@@ -679,7 +732,7 @@ function askPasscode(title, onOk){
   form.replaceChildren(el("h2",{},title), field("Passcode", p), msg,
     el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Continue")));
   form.onsubmit = async e => { e.preventDefault(); msg.textContent="Checking…"; try{ await onOk(p.value); dlg.close(); }catch(err){ msg.textContent = err?.message || "That passcode didn't work."; } };
-  dlg.showModal(); p.focus();
+  (dlg.open||dlg.showModal()); p.focus();
 }
 async function readBackupFile(file){
   const text = await file.text(); let d; try{ d = JSON.parse(text); }catch(e){ throw new Error("That file isn't a BridgeLog backup."); }
@@ -697,9 +750,9 @@ async function saveFile(name, text, type){
   const a=el("a",{href:URL.createObjectURL(new Blob([text],{type})),download:name}); document.body.append(a); a.click(); a.remove(); return true;
 }
 function toCSV(entries){
-  const rows=[["student","type","date","time","entered","logged by","detail","activity","before","after","intensity","minutes","score","notes","added notes","voided"]];
+  const rows=[["student","type","date","time","entered","logged by","detail","value","activity","before","after","intensity","minutes","score","notes","added notes","voided"]];
   entries.slice().sort((a,b)=>a.t-b.t).forEach(e=>{ const st=db.students.find(x=>x.id===e.student); const d=new Date(e.t);
-    rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.by||"",e.behavior||e.skill||e.goal||e.agreement||"",e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",e.notes||e.what||"",(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+(a.by?` (${a.by})`:"")+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):""]); });
+    rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.by||"",e.behavior||e.skill||e.goal||e.agreement||e.care||(e.interventions||[]).join("; ")||"",csvValue(e),e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",[e.description||e.saw, e.notes||e.what].filter(Boolean).join(" · "),(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+(a.by?` (${a.by})`:"")+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):""]); });
   return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
 }
 // Merge never replaces what's here: originals stay as they are, new entries are added, notes and voids combine.
@@ -739,7 +792,7 @@ function shareStudent(s){
     const safe = s.name.replace(/[^A-Za-z0-9]+/g,"") || "student";
     if (await saveFile(`bridgelog-share-${safe}-${dayKey(Date.now())}.json`, text, "application/json")){ dlg.close(); toast("Share file saved. Send it, then give the passcode separately."); }
   };
-  dlg.showModal(); p1.focus();
+  (dlg.open||dlg.showModal()); p1.focus();
 }
 function archiveStudent(s){
   const entries = db.entries.filter(e=>e.student===s.id);
@@ -773,7 +826,7 @@ function archiveStudent(s){
     const m=getMeta(); setMeta({removals:[...(m.removals||[]), {t:Date.now(), name:s.name, entries:entries.length, note:where.value.trim()}]});
     await save(); dlg.close(); render(); toast(`${s.name} removed from this device. The archive has the records.`);
   };
-  dlg.showModal();
+  (dlg.open||dlg.showModal());
 }
 function vData(){
   const v=$("#v-data"); v.replaceChildren();
@@ -786,10 +839,7 @@ function vData(){
   };
   const backup = async () => { const payload = {...db, savedAt:Date.now()}; const text = JSON.stringify(cryptoKey ? await seal(payload) : payload);
     if (await dl(`bridgelog-backup-${dayKey(Date.now())}.json`, text, "application/json")){ setMeta({lastBackup:Date.now()}); vData(); } };
-  const csv = () => { const rows=[["student","type","date","time","entered","detail","activity","before","after","intensity","minutes","score","notes","added notes","voided"]];
-    db.entries.slice().sort((a,b)=>a.t-b.t).forEach(e=>{ const st=db.students.find(x=>x.id===e.student); const d=new Date(e.t);
-      rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.behavior||e.skill||e.goal||e.agreement||"",e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",e.notes||e.what||"",(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):""]); });
-    return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n"); };
+  const csv = () => toCSV(db.entries);
   const imp = el("input",{type:"file",accept:"application/json,.json",id:"importFile",style:"display:none"});
   imp.addEventListener("change", async ()=>{ const f=imp.files[0]; imp.value=""; if(!f) return;
     try{ const {data, key, salt} = await readBackupFile(f);
@@ -883,7 +933,7 @@ function setPasscode(){
     msg.textContent="Encrypting…"; const salt = crypto.getRandomValues(new Uint8Array(16));
     cryptoKey = await deriveKey(p1.value, salt); saltB64 = toB64(salt); lastActive = Date.now();
     await save(); dlg.close(); render(); toast("Passcode is on. Your logs are encrypted."); };
-  dlg.showModal(); p1.focus();
+  (dlg.open||dlg.showModal()); p1.focus();
 }
 function removePasscode(){
   askPasscode("Turn off passcode protection", async pass=>{
@@ -895,8 +945,13 @@ function removePasscode(){
 function editStudent(){
   const s=stu(); const beh=el("input",{id:"e-beh",value:s.behaviors.join(", ")}); const goals=el("textarea",{id:"e-goals"}); goals.value=s.goals.join("\n");
   const nm=el("input",{id:"e-name",value:s.name});
-  openForm(`Edit ${s.name}`,[field("Name",nm),field("Target behaviors (comma separated)",beh),field("IEP goals (one per line)",goals)],()=>{
-    s.name=nm.value.trim()||s.name; s.behaviors=beh.value.split(",").map(x=>x.trim()).filter(Boolean); s.goals=goals.value.split("\n").map(x=>x.trim()).filter(Boolean); toast("Saved"); });
+  const rt=el("textarea",{id:"e-routines",placeholder:"Handwashing: Turn on water; Wet hands; Soap; Scrub; Rinse; Dry hands"}); rt.value=(s.routines||[]).map(r=>`${r.name}: ${r.steps.join("; ")}`).join("\n");
+  const sz=el("input",{id:"e-seiz",type:"number",min:"1",max:"30",inputmode:"numeric",placeholder:"5",value:s.seizureAlert||""});
+  openForm(`Edit ${s.name}`,[field("Name",nm),field("Target behaviors (comma separated)",beh),field("IEP goals (one per line)",goals),
+    field("Routines for skill steps (one per line: name, colon, steps separated by semicolons)",rt),
+    field("Seizure timer alert, in minutes (from the student's seizure action plan, if they have one)",sz)],()=>{
+    s.name=nm.value.trim()||s.name; s.behaviors=beh.value.split(",").map(x=>x.trim()).filter(Boolean); s.goals=goals.value.split("\n").map(x=>x.trim()).filter(Boolean);
+    s.routines=parseRoutines(rt.value); const m=Math.round(+sz.value); s.seizureAlert = m>=1&&m<=30 ? m : undefined; toast("Saved"); });
 }
 function askClear(){
   const v=$("#v-data"); v.querySelector(".confirm")?.remove();
@@ -932,6 +987,18 @@ function addSample(){
     const nWin=Math.round(rnd()*2+(1-decline)*2); for(let i=0;i<nWin;i++) db.entries.push({id:uid(),student:s.id,type:"win",t:day.getTime()+(9+rnd()*6)*36e5,skill:pick(WIN_SKILLS),what:""});
     if (day.getDay()%2===1) db.entries.push({id:uid(),student:s.id,type:"goal",t:day.getTime()+10.5*36e5,goal:s.goals[0],score:Math.min(100,Math.round(30+(1-decline)*40+rnd()*10)),notes:""});
   }
+  s.routines=[{name:"Handwashing", steps:["Turn on water","Wet hands","Get soap","Scrub for 20 seconds","Rinse","Turn off water","Dry hands"]}];
+  const LV=["FP","PP","M","V","G","I"];
+  for (let d=27; d>=0; d--){
+    const day=new Date(now.getTime()-d*864e5); if (day.getDay()===0||day.getDay()===6) continue; const prog=1-d/27;
+    if (d%2===0){ const st=day.getTime()+9.25*36e5, n=Math.max(0,Math.round(9-prog*6+rnd()*2)), taps=[...Array(n)].map(()=>st+Math.round(rnd()*30*60e3)).sort((a,b)=>a-b);
+      db.entries.push({id:uid(),student:s.id,type:"count",t:st,end:st+30*60e3,behavior:"Shouting out",count:n,taps}); }
+    if (day.getDay()===2||day.getDay()===4){ const k=10, marks=[...Array(k)].map(()=>rnd()<0.35+prog*0.45), yes=marks.filter(Boolean).length;
+      db.entries.push({id:uid(),student:s.id,type:"interval",t:day.getTime()+13.1*36e5,behavior:"On task",method:"whole",sec:60,total:k,marks,scored:k,yes,pct:pct(yes,k)}); }
+    if (day.getDay()===1||day.getDay()===3||day.getDay()===5){ const steps=s.routines[0].steps.map((x,i)=>({s:x,l:LV[Math.max(0,Math.min(5,Math.round(1.6+prog*3.8+(i<2?1:0)-rnd()*1.5)))]}));
+      db.entries.push({id:uid(),student:s.id,type:"goal",t:day.getTime()+11.6*36e5,goal:"Handwashing (skill steps)",score:pct(steps.filter(x=>x.l==="I").length,steps.length),steps,notes:""});
+      db.entries.push({id:uid(),student:s.id,type:"care",t:day.getTime()+10*36e5,care:"Toileting",detail:rnd()<0.35+prog*0.4?"Voided in toilet":pick(["Dry","Wet"]),detail2:rnd()<0.2+prog*0.3?"Student asked":"Scheduled",notes:""}); }
+  }
   const r1=new Date(now.getTime()-12*864e5+14*36e5).getTime(), r2=new Date(now.getTime()-3*864e5+13.5*36e5).getTime();
   db.entries.push({id:uid(),student:s.id,type:"restore",t:r1,status:"kept",who:"Student, peer, para",followUp:dayKey(r1+3*864e5),
     answers:["Grabbed the ball from a classmate at recess.","He said it was his turn.","The classmate was upset and recess ended early for both.","He needs a way to show it's his turn; the classmate wants an apology.","Apologize, and use the turn-taking card next recess."],agreement:"Apologize and use the turn-taking card at recess"});
@@ -939,6 +1006,497 @@ function addSample(){
     answers:["Ripped up the math worksheet.","It was too hard and everyone was watching.","Himself, and the teacher who had to stop the lesson.","A break card he can use before it gets too hard.","Use the break card, then finish the first three problems."],agreement:"Use the break card before getting overwhelmed, then finish three problems"});
   db.entries.forEach(e=>{ if(!e.c) e.c=e.t; });
   save();
+}
+
+// ---------------- counts, timers and supports ----------------
+const PROMPTS = [["I","Independent"],["G","Gestural"],["V","Verbal"],["M","Model"],["PP","Partial physical"],["FP","Full physical"],["NR","No response"]];
+const promptName = c => (PROMPTS.find(p=>p[0]===c)||[c,c])[1];
+const METHOD = {partial:"Partial interval", whole:"Whole interval", momentary:"Momentary time sampling"};
+const CARE = {
+  "Toileting":      [["Result",["Voided in toilet","BM in toilet","Dry","Wet","BM","Accident"]],["How it started",["Student asked","Scheduled","Staff noticed"]]],
+  "Meal / fluids":  [["How much",["All","Most","About half","A little","None"]],["What",["Breakfast","Snack","Lunch","Fluids"]]],
+  "Positioning":    [["Position",["Wheelchair","Stander","Mat / floor","Gait trainer","Chair","Side-lying"]]],
+  "Regulation break":[["Where",["Calm corner","Sensory room","Walk","Movement break","Quiet space"]],["Started by",["Student asked","Staff offered","Scheduled"]]]};
+const SEIZURE_KINDS = ["Convulsive (stiffening or jerking)","Staring, not responding","One part of the body","Sudden drop or loss of tone","Not sure"];
+const EMERGENCY_INTERVENTIONS = ["Escort","Standing restraint","Seated restraint","Wall-assisted restraint","Floor-assisted restraint","Environmental seclusion","Other"];
+
+const esc = v => String(v??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDur = ms => { const s=Math.max(0,Math.floor(ms/1000)), h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return h? `${h}:${String(m).padStart(2,"0")}:${String(x).padStart(2,"0")}` : `${m}:${String(x).padStart(2,"0")}`; };
+const fmtMins = ms => { const s=Math.round(ms/1000); if (s<60) return `${s} sec`; const m=Math.floor(s/60), r=s%60; return r? `${m} min ${r} sec` : `${m} min`; };
+const fmtDT = t => new Date(t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"});
+const intervalLabel = sec => sec<60 ? `${sec}-second` : `${sec/60}-minute`;
+function parseRoutines(text){
+  return text.split("\n").map(l=>{ const i=l.indexOf(":"); if (i<1) return null; const name=l.slice(0,i).trim(), steps=l.slice(i+1).split(";").map(x=>x.trim()).filter(Boolean);
+    return name && steps.length ? {name, steps} : null; }).filter(Boolean);
+}
+function goalDetail(e){
+  if (e.trials?.length){ const ind=e.trials.filter(x=>x==="I").length; return `Trials: ${e.trials.join(" ")} (${ind} of ${e.trials.length} independent)`; }
+  if (e.steps?.length){ const sc=e.steps.filter(x=>x.l), ind=sc.filter(x=>x.l==="I").length; return `${ind} of ${sc.length} steps independent`; }
+  return "";
+}
+function addEntry(e){ const me=getMeta().me; const rec={id:uid(), c:Date.now(), ...(me?{by:me}:{}), ...e}; db.entries.push(rec); return rec; }
+function csvValue(e){
+  if (e.type==="count") return `${e.count} times in ${fmtMins(e.end-e.t)}`;
+  if (e.type==="duration"||e.type==="seizure") return e.seconds!=null ? `${e.seconds} sec` : "";
+  if (e.type==="interval") return `${e.pct}% of ${e.scored} intervals`;
+  if (e.type==="emergency") return e.minutes!=null ? `${e.minutes} min` : "";
+  if (e.type==="goal") return `${e.score}%`;
+  return "";
+}
+const perHour = e => { const h=(e.end-e.t)/36e5; return h>=1/60 ? Math.round(e.count/h*10)/10 : null; };
+
+// How each new entry type is described in the timeline and shown in "View".
+const MORE_TYPES = {
+  count:{ describe:e=>[`${e.behavior}: ${e.count} time${e.count===1?"":"s"}`, `Counted for ${fmtMins(e.end-e.t)}`+(perHour(e)!=null?` · ${perHour(e)} per hour`:"")+(e.notes?` · ${e.notes}`:"")],
+          rows:(e,add)=>{ add("Behavior",e.behavior); add("Count",e.count); add("Counted for",fmtMins(e.end-e.t)); add("Rate",perHour(e)!=null?`${perHour(e)} per hour`:""); add("Times",(e.taps||[]).map(fmtTime).join(", ")); add("Note",e.notes); } },
+  duration:{ describe:e=>[`${e.behavior}: ${fmtMins(e.seconds*1000)}`, [`Started ${fmtTime(e.t)}`, e.notes].filter(Boolean).join(" · ")],
+          rows:(e,add)=>{ add("Measured",e.behavior); add("Duration",fmtMins(e.seconds*1000)); add("Started",fmtTime(e.t)); add("Ended",fmtTime(e.t+e.seconds*1000)); add("Note",e.notes); } },
+  interval:{ describe:e=>[`${e.behavior}: ${e.pct}% of intervals`, `${METHOD[e.method]}, ${e.yes} of ${e.scored} intervals`+(e.total-e.scored?`, ${e.total-e.scored} not scored`:"")+` · ${intervalLabel(e.sec)} intervals`],
+          rows:(e,add)=>{ add("Behavior",e.behavior); add("Method",METHOD[e.method]); add("Interval length",intervalLabel(e.sec)); add("Result",`${e.pct}% (${e.yes} of ${e.scored} scored intervals)`);
+            add("Not scored", e.total-e.scored || ""); add("Each interval", e.marks.map(m=>m==null?"–":m?"+":"0").join(" ")); } },
+  care:{ describe:e=>[`${e.care}${e.detail?`: ${e.detail}`:""}`, [e.detail2, e.minutes?`${e.minutes} min`:null, e.notes].filter(Boolean).join(" · ")],
+          rows:(e,add)=>{ add("Type",e.care); (CARE[e.care]||[]).forEach(([q],i)=>add(q, i?e.detail2:e.detail)); if(!CARE[e.care]) add("Detail",e.detail); add("Length",e.minutes?`${e.minutes} min`:""); add("Note",e.notes); } },
+  seizure:{ describe:e=>[`Seizure${e.seconds!=null?`: ${fmtMins(e.seconds*1000)}`:""}`, [e.kind, e.rescue?`Rescue medicine at ${fmtTime(e.rescue)}`:null, (e.notified||[]).length?`Notified: ${e.notified.join(", ")}`:null, e.notes].filter(Boolean).join(" · ")],
+          rows:(e,add)=>{ add("Started",fmtDT(e.t)); add("Length",e.seconds!=null?fmtMins(e.seconds*1000):""); add("What it looked like",e.kind); add("What you saw",e.saw); add("Afterwards",e.after);
+            add("Rescue medicine",e.rescue?`Given at ${fmtTime(e.rescue)} (${fmtMins(e.rescue-e.t)} in)`:"Not given"); add("Notified",(e.notified||[]).join(", ")); add("Notes",e.notes); } },
+  emergency:{ describe:e=>[`Emergency intervention${(e.interventions||[]).length?`: ${e.interventions.join(", ")}`:""}`, [e.minutes!=null?`${e.minutes} min`:null, e.location, followupLine(e)].filter(Boolean).join(" · ")],
+          rows:(e,add)=>{ BER_FIELDS.filter(([k])=>k!=="t").forEach(([k,label])=>add(label, k==="interventions"?(e.interventions||[]).join(", "):k==="t"?fmtDT(e.t):k==="minutes"?(e.minutes!=null?`${e.minutes} min`:""):e[k])); } }
+};
+
+// ---------- timer engine ----------
+// Timers keep their start times rather than counting ticks, so they stay right through screen locks, reloads and background tabs.
+let audioCtx = null, wakeLock = null;
+function unlockAudio(){ try{ audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); if (audioCtx.state==="suspended") audioCtx.resume(); }catch(e){} }
+function chime(kind="soft"){
+  try{ unlockAudio(); const ctx=audioCtx; const notes = kind==="alert" ? [880,660,880,660,880] : kind==="end" ? [523,659,784] : [700,700];
+    notes.forEach((f,i)=>{ const o=ctx.createOscillator(), g=ctx.createGain(), t=ctx.currentTime+i*0.22; o.type="sine"; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(kind==="alert"?0.4:0.2,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.2);
+      o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+0.22); }); }catch(e){}
+  try{ navigator.vibrate?.(kind==="alert"?[300,120,300,120,300]:[150,80,150]); }catch(e){}
+}
+async function keepAwake(on){ try{
+  if (on && !wakeLock && navigator.wakeLock){ wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release",()=>{ wakeLock=null; }); }
+  if (!on && wakeLock){ const w=wakeLock; wakeLock=null; await w.release(); } }catch(e){} }
+document.addEventListener("visibilitychange",()=>{ if (document.visibilityState==="visible" && (db.running||[]).length) keepAwake(true); });
+const running = () => (db.running ||= []);
+function startRun(r){ unlockAudio(); running().push({id:uid(), start:Date.now(), ...r}); save(); keepAwake(true); renderRunning(); }
+function endRun(r){ db.running = running().filter(x=>x.id!==r.id); save(); if (!db.running.length) keepAwake(false); renderRunning(); }
+const runStudent = r => db.students.find(x=>x.id===r.student);
+
+const runRefs = {};
+function renderRunning(){
+  const box=$("#running"); if (!box) return; box.replaceChildren(); for (const k in runRefs) delete runRefs[k];
+  for (const r of (db.running||[])){ const c=runCard(r); if (c) box.append(c); }
+  const br = (db.running||[]).find(r=>r.kind==="break" && r.full), bv=$("#breakview");
+  if (br){ bv.hidden=false; bv.replaceChildren(...breakView(br)); } else { bv.hidden=true; bv.replaceChildren(); }
+  tick(true);
+}
+function runCard(r){
+  const st=runStudent(r), who=st?st.name:"", big=el("div",{class:"big"},"0:00"), sub=el("div",{class:"who"});
+  const card=el("div",{class:"run"}), add=(...k)=>card.append(...k.filter(x=>x!=null)), head=t=>el("div",{class:"rh"}, el("b",{},t), el("span",{class:"who"},who));
+  const btn=(label,fn,cls="")=>el("button",{type:"button",class:cls,onclick:fn},label);
+  const discard=()=>btn("Discard",()=>{ endRun(r); toast("Discarded. Nothing was saved."); },"ghost");
+  let update = now => { big.textContent = fmtDur(now-r.start); };
+  if (r.kind==="tally"){
+    const n=el("div",{class:"big"},String(r.taps.length));
+    add(head(`Counting: ${r.behavior}`), el("div",{class:"rh"}, n, el("span",{class:"who"},"times"), el("span",{style:"flex:1"}), big),
+      el("div",{class:"btns"}, btn("+1",()=>{ r.taps.push(Date.now()); n.textContent=r.taps.length; save(); },"tap"),
+        btn("−1",()=>{ if(r.taps.length){ r.taps.pop(); n.textContent=r.taps.length; save(); } })),
+      el("div",{class:"btns"}, btn("Stop and save",()=>finishTally(r),"primary"), discard()));
+  } else if (r.kind==="duration"){
+    add(head(`Timing: ${r.behavior}`), big, el("div",{class:"btns"}, btn("Stop and save",()=>finishDuration(r),"primary"), discard()));
+  } else if (r.kind==="interval"){
+    const L=r.sec*1000, i=Math.min(r.total, Math.floor((Date.now()-r.start)/L)), cur=i<r.total?i:null, p=i>=1 ? i-1 : null;
+    const pending = p!=null && r.marks[p]==null;
+    const Q = {partial:"Did it happen at any point in that interval?", whole:"Did it last the whole interval?", momentary:"Is it happening right now?"}[r.method];
+    const yes = r.marks.filter(m=>m===true).length, scored=r.marks.filter(m=>m!=null).length;
+    add(head(`${METHOD[r.method]}: ${r.behavior}`), el("div",{class:"rh"}, big, sub));
+    if (pending) add(el("div",{class:"ask",role:"alert"}, el("b",{},`Interval ${p+1}: ${Q}`),
+      el("div",{class:"btns"}, btn("Yes",()=>{ r.marks[p]=true; save(); renderRunning(); },"primary"), btn("No",()=>{ r.marks[p]=false; save(); renderRunning(); }))));
+    if (cur!=null && r.method!=="momentary"){
+      const marked = r.marks[cur];
+      add(el("div",{class:"btns"}, r.method==="partial"
+        ? btn(marked===true?"Marked: it happened ✓":"It happened",()=>{ r.marks[cur]= marked===true?null:true; save(); renderRunning(); }, marked===true?"primary":"")
+        : btn(marked===false?"Marked: it stopped ✓":"It stopped",()=>{ r.marks[cur]= marked===false?null:false; save(); renderRunning(); }, marked===false?"primary":"")));
+    }
+    add(el("p",{class:"msg",style:"margin:0;color:var(--muted)"},`So far: yes in ${yes} of ${scored} scored interval${scored===1?"":"s"}.`),
+      el("div",{class:"btns"}, btn("Stop early and save",()=>finishInterval(r,true)), discard()));
+    update = now => { const ms=now-r.start, k=Math.floor(ms/L);
+      if (k>=r.total){ big.textContent="Done"; sub.textContent="Answer the last interval to finish."; return; }
+      big.textContent=fmtDur(L-(ms%L)); sub.textContent=`left in interval ${k+1} of ${r.total} (${intervalLabel(r.sec)})`; };
+  } else if (r.kind==="seizure"){
+    const am=(r.alertMin||5)*60e3, past=Date.now()-r.start>=am;
+    if (past) card.classList.add("alert");
+    add(head("Seizure timer"), big,
+      el("p",{class:"msg",style:"margin:0"}, past ? `It's been ${r.alertMin||5} minutes. Follow ${who}'s seizure action plan now. Many plans call for rescue medicine or 911 at this point.`
+        : `Stay with ${who}, keep them safe and note what you see. The alert sounds at ${r.alertMin||5} minutes${st?.seizureAlert?" (from their plan)":""}.`),
+      r.rescue ? el("p",{class:"msg",style:"margin:0"},`Rescue medicine given at ${fmtTime(r.rescue)} (${fmtMins(r.rescue-r.start)} in).`) : null,
+      el("div",{class:"btns"}, r.rescue?null:btn("Rescue medicine given",()=>{ r.rescue=Date.now(); save(); renderRunning(); }), btn("Seizure ended",()=>finishSeizure(r),"primary")));
+  } else if (r.kind==="emergency"){
+    card.classList.add("alert");
+    add(head("Emergency intervention timer"), big,
+      el("p",{class:"msg",style:"margin:0"},"Use it only as long as needed to prevent serious harm, and get the site administrator if it goes on."),
+      el("div",{class:"btns"}, btn("Intervention ended",()=>finishEmergency(r),"primary")));
+  } else if (r.kind==="break"){
+    add(head(`Break timer${r.then?` · then ${r.then}`:""}`), el("div",{class:"rh"}, big, el("span",{class:"who"},"left")),
+      el("div",{class:"btns"}, btn("Show to student",()=>{ r.full=true; save(); renderRunning(); },"primary"), btn("End break",()=>finishBreak(r,true))));
+    update = now => { big.textContent = fmtDur(r.mins*60e3-(now-r.start)+999); };
+  }
+  runRefs[r.id] = {update};
+  return card;
+}
+function breakView(r){
+  const NS="http://www.w3.org/2000/svg", svg=document.createElementNS(NS,"svg"); svg.setAttribute("viewBox","0 0 200 200"); svg.setAttribute("aria-hidden","true");
+  const c=(a)=>{ const e=document.createElementNS(NS,"circle"); for(const k in a) e.setAttribute(k,a[k]); svg.append(e); return e; };
+  c({cx:100,cy:100,r:84,fill:"none",stroke:"var(--care-soft)","stroke-width":22});
+  const C=2*Math.PI*84, ring=c({cx:100,cy:100,r:84,fill:"none",stroke:"var(--care)","stroke-width":22,"stroke-linecap":"round",transform:"rotate(-90 100 100)","stroke-dasharray":C});
+  const left=el("div",{class:"left"}), then=r.then?el("div",{class:"then"},`Then: ${r.then}`):null;
+  runRefs[r.id+"-full"] = {update: now=>{ const ms=r.mins*60e3-(now-r.start), f=Math.max(0,Math.min(1,ms/(r.mins*60e3))); ring.setAttribute("stroke-dashoffset", String(C*(1-f))); left.textContent=fmtDur(ms+999); }};
+  return [el("button",{type:"button",class:"small ghost back",onclick:()=>{ r.full=false; save(); renderRunning(); }},"Back"),
+    el("div",{style:"font-size:1.3rem;color:var(--care)"},"Break time"), svg, left, then];
+}
+// Runs four times a second; only updates text unless an interval rolls over or an alert is due.
+function tick(quiet){
+  const rs=db.running||[]; if (!rs.length) return; const now=Date.now();
+  for (const r of rs.slice()){
+    const ms=now-r.start;
+    if (r.kind==="interval"){ const L=r.sec*1000, i=Math.min(r.total, Math.floor(ms/L));
+      if (i>(r.beeped??0)){ r.beeped=i; if (r.marks[i-1]==null) chime(); save(); if(!quiet){ renderRunning(); return; } }
+      if (i>=r.total && (r.marks[r.total-1]!=null || ms > r.total*L + Math.max(20e3,L))){ finishInterval(r,false); return; } }
+    if (r.kind==="seizure"){ const am=(r.alertMin||5)*60e3; if (ms>=am){ const k=Math.floor((ms-am)/60e3); if (k>(r.alertN??-1)){ r.alertN=k; chime("alert"); save(); if(!quiet){ renderRunning(); return; } } } }
+    if (r.kind==="break" && ms>=r.mins*60e3){ finishBreak(r,false); return; }
+    runRefs[r.id]?.update(now); runRefs[r.id+"-full"]?.update(now);
+  }
+}
+setInterval(()=>tick(false), 250);
+
+function finishTally(r){ const end=Date.now(); addEntry({student:r.student,type:"count",t:r.start,end,behavior:r.behavior,count:r.taps.length,taps:r.taps.slice()});
+  endRun(r); render(); toast(`Saved: ${r.behavior}, ${r.taps.length} time${r.taps.length===1?"":"s"} in ${fmtMins(end-r.start)}`); }
+function finishDuration(r){ const sec=Math.round((Date.now()-r.start)/1000); addEntry({student:r.student,type:"duration",t:r.start,behavior:r.behavior,seconds:sec});
+  endRun(r); render(); toast(`Saved: ${r.behavior}, ${fmtMins(sec*1000)}`); }
+function finishInterval(r, early){
+  const L=r.sec*1000, used = early ? Math.min(r.total, Math.ceil((Date.now()-r.start)/L)) : r.total;
+  const marks=r.marks.slice(0,used), scored=marks.filter(m=>m!=null).length, yes=marks.filter(m=>m===true).length;
+  endRun(r);
+  if (!scored){ toast("No intervals were marked, so nothing was saved."); return; }
+  addEntry({student:r.student,type:"interval",t:r.start,behavior:r.behavior,method:r.method,sec:r.sec,total:used,marks,scored,yes,pct:pct(yes,scored)});
+  render(); chime("end"); toast(`Saved: ${r.behavior} in ${pct(yes,scored)}% of intervals`);
+}
+function finishBreak(r, early){
+  const ms=Math.min(Date.now()-r.start, r.mins*60e3); endRun(r);
+  addEntry({student:r.student,type:"care",t:r.start,care:"Regulation break",detail:"Timed break",detail2:r.then?`Then: ${r.then}`:"",minutes:Math.max(1,Math.round(ms/60e3)),notes:early?"Ended early":""});
+  render(); if (!early) chime("end"); toast(early?"Break ended and logged":"Break's over. Logged.");
+}
+function finishSeizure(r){
+  const end=Date.now(); endRun(r);
+  const e=addEntry({student:r.student,type:"seizure",t:r.start,seconds:Math.round((end-r.start)/1000),rescue:r.rescue||null,timed:true});
+  save(); render(); seizureForm(e);   // the times are already saved, so closing this form loses nothing
+}
+function finishEmergency(r){
+  const end=Date.now(); endRun(r);
+  const e=addEntry({student:r.student,type:"emergency",t:r.start,minutes:Math.max(1,Math.round((end-r.start)/60e3)),timed:true});
+  save(); render(); emergencyForm(e);
+}
+
+// ---------- pickers ----------
+const pickBtn = (title, sub, fn) => el("button",{type:"button",onclick:fn}, el("b",{},title), el("small",{},sub));
+function sheet(title, kids){ form.replaceChildren(el("h2",{},title), ...kids, el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Close")));
+  form.onsubmit=e=>e.preventDefault(); if (!dlg.open) (dlg.open||dlg.showModal()); }
+function openTimers(){
+  if (needStudent()) return; const s=stu();
+  sheet(`Count & time · ${s.name}`, [el("div",{class:"picker"},
+    pickBtn("Tally counter","Tap each time it happens",()=>pickTarget("Tally counter",s,false,b=>startRun({kind:"tally",student:s.id,behavior:b,taps:[]}))),
+    pickBtn("Duration timer","How long something lasts",()=>pickTarget("Duration timer",s,true,b=>startRun({kind:"duration",student:s.id,behavior:b}))),
+    pickBtn("Interval recording","Partial, whole or momentary",()=>setupInterval(s)),
+    pickBtn("Break timer","Visual countdown for the student",()=>setupBreak(s)),
+    pickBtn("Seizure timer","Times it and alerts per the plan",()=>{ dlg.close(); startRun({kind:"seizure",student:s.id,alertMin:s.seizureAlert||5}); }),
+    pickBtn("Emergency intervention timer","Times it for the report",()=>{ dlg.close(); startRun({kind:"emergency",student:s.id}); })),
+    el("p",{class:"note"},"Timers keep the right time if you switch apps or the screen dims, and keep the screen on where the device allows. You can run more than one at once, even for different students.")]);
+}
+function openSupports(){
+  if (needStudent()) return; const s=stu();
+  sheet(`Supports · ${s.name}`, [el("div",{class:"picker"},
+    pickBtn("Trials with prompt levels","Tap the prompt level for each trial",()=>logTrials(s)),
+    pickBtn("Skill steps","Task analysis, step by step",()=>logSteps(s)),
+    pickBtn("Care log","Toileting, meals, positioning, breaks",()=>logCare(s)),
+    pickBtn("Seizure timer","Start timing now",()=>{ dlg.close(); startRun({kind:"seizure",student:s.id,alertMin:s.seizureAlert||5}); }),
+    pickBtn("Log a seizure afterwards","Enter the times yourself",()=>seizureForm(null)),
+    pickBtn("Emergency intervention report","Behavioral emergency details and follow-ups",()=>emergencyForm(null)))]);
+}
+function pickTarget(title, s, extra, go){
+  const ch=chipGroup("What", [...s.behaviors, ...(extra?["Time on task","Upset or crying","Time to transition"]:[])]);
+  const txt=el("input",{id:"t-beh",placeholder:"Or type what you're measuring"});
+  form.replaceChildren(el("h2",{},`${title} · ${s.name}`), field("What are you measuring?",ch), txt,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Start")));
+  form.onsubmit=e=>{ e.preventDefault(); const b=txt.value.trim()||ch.dataset.value; if(!b){ toast("Pick or type what you're measuring."); return; } dlg.close(); go(b); };
+}
+function setupInterval(s){
+  const ch=chipGroup("Behavior", [...s.behaviors,"On task"]), txt=el("input",{id:"i-beh",placeholder:"Or type the behavior"});
+  const method=chipGroup("Method", Object.values(METHOD), METHOD.partial);
+  const len=el("select",{id:"i-len"}, ...[[10,"10 seconds"],[15,"15 seconds"],[30,"30 seconds"],[60,"1 minute"],[120,"2 minutes"],[300,"5 minutes"],[600,"10 minutes"]].map(([v,l])=>el("option",{value:v},l))); len.value="60";
+  const n=el("input",{id:"i-n",type:"number",min:"1",max:"120",value:"10",inputmode:"numeric"});
+  const help=el("p",{class:"note"}), total=el("p",{style:"margin:0;color:var(--muted);font-size:.85rem"});
+  const explain=()=>{ help.textContent = {[METHOD.partial]:"When each interval ends, mark whether the behavior happened at any point in it. You can tap \"It happened\" as soon as you see it.",
+    [METHOD.whole]:"When each interval ends, mark whether the behavior lasted the entire interval. Good for behaviors you want more of, like staying on task. Tap \"It stopped\" if it breaks.",
+    [METHOD.momentary]:"When each interval ends, look up and mark whether the behavior is happening at that moment."}[method.dataset.value];
+    total.textContent = `Session length: ${fmtMins(+len.value*1000*Math.max(1,+n.value||0))}`; };
+  method.addEventListener("click",()=>setTimeout(explain)); len.addEventListener("change",explain); n.addEventListener("input",explain); explain();
+  form.replaceChildren(el("h2",{},`Interval recording · ${s.name}`), field("Behavior",ch), txt, field("Method",method), help,
+    el("div",{class:"row"}, field("Interval length",len), field("Number of intervals",n)), total,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Start")));
+  form.onsubmit=e=>{ e.preventDefault(); const b=txt.value.trim()||ch.dataset.value, k=Math.round(+n.value);
+    if(!b){ toast("Pick or type the behavior."); return; } if(!(k>=1&&k<=120)){ toast("Use 1 to 120 intervals."); return; }
+    const m=Object.keys(METHOD).find(x=>METHOD[x]===method.dataset.value);
+    dlg.close(); startRun({kind:"interval",student:s.id,behavior:b,method:m,sec:+len.value,total:k,marks:Array(k).fill(null),beeped:0}); };
+}
+function setupBreak(s){
+  const mins=chipGroup("Length", ["1 min","2 min","3 min","5 min","10 min"], "3 min");
+  const then=el("input",{id:"b-then",placeholder:"e.g. math, three problems",maxlength:"40"});
+  form.replaceChildren(el("h2",{},`Break timer · ${s.name}`), field("How long",mins), field("What comes after (optional, shown to the student)",then),
+    el("p",{class:"note"},"\"Show to student\" fills the screen with a calm countdown ring. It chimes softly at the end and logs the break."),
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Start break")));
+  form.onsubmit=e=>{ e.preventDefault(); dlg.close(); startRun({kind:"break",student:s.id,mins:parseInt(mins.dataset.value),then:then.value.trim(),full:true}); };
+}
+
+// ---------- supports forms ----------
+function logTrials(s){
+  const g=el("select",{id:"tr-goal"}, ...(s.goals.length?s.goals:["General"]).map(x=>el("option",{},x)));
+  const trials=[], seq=el("div",{class:"seq","aria-live":"polite"}), stat=el("p",{style:"margin:0;color:var(--muted);font-size:.85rem"});
+  const show=()=>{ seq.textContent = trials.length ? trials.join(" ") : "No trials yet"; const ind=trials.filter(x=>x==="I").length; stat.textContent = trials.length ? `${ind} of ${trials.length} independent (${pct(ind,trials.length)}%)` : "Tap the prompt level each trial needed."; };
+  const pad=el("div",{class:"chips lvl"}, ...PROMPTS.map(([c,n])=>el("button",{type:"button",class:"chip",title:n,"aria-label":n,onclick:()=>{ trials.push(c); show(); }},c)));
+  const n=el("input",{id:"tr-note",placeholder:"Setting, materials, anything to note"});
+  openForm(`Trials · ${s.name}`,[field("Goal",g), el("b",{},"Prompt level for each trial"), pad,
+    el("p",{style:"margin:0;font-size:.78rem;color:var(--muted)"}, PROMPTS.map(([c,n])=>`${c} = ${n}`).join(" · ")), seq, stat,
+    el("div",{class:"row"}, el("button",{type:"button",class:"small ghost",onclick:()=>{ trials.pop(); show(); }},"Undo last trial"), field("When",timeInput())), field("Note",n)], ()=>{
+      if (!trials.length){ toast("Tap at least one trial."); return false; }
+      const ind=trials.filter(x=>x==="I").length;
+      db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal:g.value, score:pct(ind,trials.length), trials:trials.slice(), notes:n.value.trim()}); toast("Trials saved");
+  });
+  show();
+}
+function logSteps(s){
+  const rs=s.routines||[];
+  if (!rs.length){
+    const nm=el("input",{id:"ro-name",placeholder:"e.g. Handwashing"}), st=el("textarea",{id:"ro-steps",placeholder:"One step per line"});
+    openForm(`Set up a routine · ${s.name}`,[el("p",{class:"note"},"Break the skill into small steps, the way the team teaches it. You can change routines later in the Data tab under Edit behaviors and goals."), field("Routine name",nm), field("Steps",st)], ()=>{
+      const steps=st.value.split("\n").map(x=>x.trim()).filter(Boolean); if(!nm.value.trim()||steps.length<2){ toast("Add a name and at least two steps."); return false; }
+      s.routines=[{name:nm.value.trim(), steps}]; setTimeout(()=>logSteps(s), 0); });
+    return;
+  }
+  const sel=el("select",{id:"ro-sel"}, ...rs.map((r,i)=>el("option",{value:i},r.name)));
+  const box=el("div",{class:"steps"}); let groups=[];
+  const build=()=>{ const r=rs[+sel.value]; groups=r.steps.map(x=>chipGroup(x, PROMPTS.map(p=>p[0])));
+    box.replaceChildren(...r.steps.map((x,i)=>el("div",{class:"stepq"}, el("span",{style:"font-size:.9rem"},`${i+1}. ${x}`), (groups[i].classList.add("lvl"), groups[i])))); };
+  sel.addEventListener("change",build); build();
+  const n=el("input",{id:"ro-note",placeholder:"Anything to note"});
+  openForm(`Skill steps · ${s.name}`,[field("Routine",sel), el("p",{style:"margin:0;font-size:.78rem;color:var(--muted)"}, PROMPTS.map(([c,n])=>`${c} = ${n}`).join(" · ")), box, field("When",timeInput()), field("Note",n)], ()=>{
+    const r=rs[+sel.value], steps=r.steps.map((x,i)=>({s:x, l:groups[i].dataset.value||""})), sc=steps.filter(x=>x.l);
+    if (!sc.length){ toast("Mark the prompt level for at least one step."); return false; }
+    db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal:`${r.name} (skill steps)`, score:pct(sc.filter(x=>x.l==="I").length, sc.length), steps, notes:n.value.trim()}); toast("Skill steps saved");
+  });
+}
+function logCare(s){
+  const kind=chipGroup("Care", Object.keys(CARE), "Toileting"), area=el("div",{class:"stack"}); let gs=[];
+  const build=()=>{ gs=CARE[kind.dataset.value].map(([q,opts])=>[q,chipGroup(q,opts)]); area.replaceChildren(...gs.map(([q,g])=>field(q,g))); };
+  kind.addEventListener("click",()=>setTimeout(build)); build();
+  const n=el("input",{id:"ca-note",placeholder:"Anything to note"});
+  openForm(`Care log · ${s.name}`,[field("Type",kind), area, field("When",timeInput()), field("Note",n)], ()=>{
+    const d=gs.map(([,g])=>g.dataset.value||""); if (!d[0] && !n.value.trim()){ toast("Pick an option or add a note."); return false; }
+    db.entries.push({id:uid(), student:s.id, type:"care", t:readTime(), care:kind.dataset.value, detail:d[0]||"", detail2:d[1]||"", notes:n.value.trim()}); toast("Care logged");
+  });
+}
+function multiChips(name, options, values=[]){
+  const g=el("div",{class:"chips",role:"group","aria-label":name}); const set=new Set(values);
+  options.forEach(o=>{ const b=el("button",{type:"button",class:"chip","aria-pressed":String(set.has(o))},o);
+    b.addEventListener("click",()=>{ set.has(o)?set.delete(o):set.add(o); b.setAttribute("aria-pressed",String(set.has(o))); }); g.append(b); });
+  g.values=()=>options.filter(o=>set.has(o)); return g;
+}
+function seizureForm(e){
+  const s = e ? db.students.find(x=>x.id===e.student) : stu();
+  const kind=chipGroup("What it looked like", SEIZURE_KINDS, e?.kind), saw=el("textarea",{id:"sz-saw",placeholder:"What you saw, in order. Eyes, arms and legs, breathing, color, whether they responded."});
+  saw.value=e?.saw||"";
+  const after=chipGroup("Afterwards", ["Sleepy","Confused","Back to usual","Headache","Other"], e?.after);
+  const notified=multiChips("Notified", ["School nurse","Parent or guardian","Administrator","911 called"], e?.notified||[]);
+  const notes=el("input",{id:"sz-notes",placeholder:"Anything else",value:e?.notes||""});
+  const manual = !e?.timed;
+  const when=timeInput(); if (e) when.value=localInput(e.t);
+  const len=el("input",{id:"sz-len",type:"number",min:"0",step:"1",inputmode:"numeric",placeholder:"seconds",value:e?.seconds??""});
+  const rescue=el("input",{id:"sz-rescue",type:"datetime-local",value:e?.rescue?localInput(e.rescue):""});
+  const head = e?.timed ? el("p",{class:"note"},`Timed: started ${fmtTime(e.t)}, lasted ${fmtMins(e.seconds*1000)}${e.rescue?`, rescue medicine at ${fmtTime(e.rescue)}`:""}. These times are saved already.`) : null;
+  openForm(`Seizure · ${s.name}`,[head, manual?el("div",{class:"row"}, field("Started",when), field("Length (seconds)",len)):null,
+    field("What it looked like",kind), field("What you saw",saw), field("Afterwards",after), manual?field("Rescue medicine given at (if given)",rescue):null,
+    field("Notified",notified), field("Notes",notes),
+    el("p",{class:"note"},"Follow the student's seizure action plan and your school's procedures. This log is a record, not medical guidance.")], ()=>{
+      const rec = e || {id:uid(), student:s.id, type:"seizure"};
+      if (manual){ rec.t=readTime(); rec.seconds = len.value===""?null:Math.round(+len.value); const r=rescue.value?new Date(rescue.value).getTime():null; rec.rescue = r&&!isNaN(r)?r:null; }
+      Object.assign(rec,{kind:kind.dataset.value||"", saw:saw.value.trim(), after:after.dataset.value||"", notified:notified.values(), notes:notes.value.trim()});
+      if (!e) db.entries.push(rec); toast("Seizure saved");
+  });
+}
+// The information California's behavioral emergency report asks for (Ed. Code 56521.1), plus what most district forms add.
+const BER_FIELDS = [["t","Date and time"],["minutes","Length of the intervention"],["age","Student's age"],["location","Setting and location"],["staff","Staff and others involved (names and titles)"],
+  ["before","What led up to it"],["tried","Less restrictive supports tried first"],["description","Description of the incident"],["interventions","Emergency intervention used"],
+  ["bip","Has a behavior intervention plan"],["injuryStudent","Injuries to the student"],["injuryOthers","Injuries to others, including staff"],["damage","Property damage"],["notes","Other notes"]];
+function emergencyForm(e){
+  const s = e ? db.students.find(x=>x.id===e.student) : stu(); const v=k=>e?.[k]??"";
+  const I={}; const ta=(k,ph)=>{ const t=el("textarea",{id:"er-"+k,placeholder:ph}); t.value=v(k); I[k]=t; return t; }; const inp=(k,ph,extra={})=>{ I[k]=el("input",{id:"er-"+k,placeholder:ph,value:v(k),...extra}); return I[k]; };
+  const used=multiChips("Emergency intervention used", EMERGENCY_INTERVENTIONS, e?.interventions||[]), bip=chipGroup("Has a BIP", ["Yes","No"], e?.bip);
+  const when=timeInput(); if (e) when.value=localInput(e.t);
+  const mins=inp("minutes","minutes",{type:"number",min:"0",step:"1",inputmode:"numeric"});
+  openForm(`Emergency intervention · ${s.name}`,[
+    el("p",{class:"note"},"California allows emergency interventions only for unpredictable, spontaneous behavior that poses a clear and present danger of serious physical harm, when a less restrictive response can't prevent it. Write what you saw and did, as soon as you can."),
+    e?.timed ? el("p",{class:"note"},`Timed: started ${fmtTime(e.t)}, about ${e.minutes} min. Saved already.`) : el("div",{class:"row"}, field("Started",when), field("Length (minutes)",mins)),
+    el("div",{class:"row"}, field("Student's age", inp("age","e.g. 9",{type:"number",min:"3",max:"22",inputmode:"numeric"})), field("Setting and location", inp("location","e.g. classroom, near the door"))),
+    field("Staff and others involved (names and titles)", inp("staff","e.g. J. King, para; M. Lopez, teacher")),
+    field("What led up to it", ta("before","What was happening right before")),
+    field("Less restrictive supports tried first", ta("tried","e.g. offered break, reduced demands, moved peers away")),
+    field("Description of the incident", ta("description","What the student did and what staff did, in order")),
+    field("Emergency intervention used", used),
+    field("Does the student have a behavior intervention plan?", bip),
+    field("Injuries to the student", inp("injuryStudent","Write \"None\" if none")),
+    field("Injuries to others, including staff", inp("injuryOthers","Write \"None\" if none")),
+    field("Property damage", inp("damage","If any")), field("Other notes", ta("notes",""))], ()=>{
+      if (!I.description.value.trim() || !used.values().length){ toast("Add the description and the intervention used."); return false; }
+      const rec = e || {id:uid(), student:s.id, type:"emergency"};
+      if (!e?.timed){ rec.t=readTime(); rec.minutes = I.minutes.value===""?null:Math.round(+I.minutes.value); }
+      ["age","location","staff","before","tried","description","injuryStudent","injuryOthers","damage","notes"].forEach(k=>rec[k]=I[k].value.trim());
+      rec.interventions=used.values(); rec.bip=bip.dataset.value||"";
+      if (!e) db.entries.push(rec);
+      setTimeout(()=>viewEntry(rec), 0); toast("Report saved. Next steps are listed.");
+  });
+}
+// Follow-ups can be marked any time, even after the entry locks. Each one also leaves a dated note.
+function followupLine(e){ const f=e.followups||{}; const left=[!f.admin&&"administrator review", !f.parent&&"parent notice", e.bip==="No"&&!f.iep&&"IEP meeting"].filter(Boolean);
+  return left.length ? `To do: ${left.join(", ")}` : "Follow-ups done"; }
+function emergencyFollowups(e){
+  const f = e.followups ||= {}; const me=getMeta().me||"";
+  const mark=(k,text)=>{ f[k]={t:Date.now(), by:me}; (e.addenda ||= []).push({t:Date.now(), text, by:me}); save(); viewEntry(e); render(); };
+  const how=el("input",{id:"fu-how",placeholder:"How: phone, in person, email",style:"flex:1 1 160px"}), adm=el("input",{id:"fu-adm",placeholder:"Administrator's name",style:"flex:1 1 160px"});
+  const item=(done,label,ctrl)=>el("div",{class:"item"}, el("span",{class:done?"done":""}, (done?"✓ ":"")+label), done?el("span",{class:"t"},fmtDT(done.t)):ctrl);
+  return el("div",{class:"todo"}, el("b",{},"Required next steps"),
+    item(f.admin, "Report forwarded to the designated administrator (right away)", el("div",{class:"row",style:"flex:1 1 100%"}, adm, el("button",{type:"button",class:"small",onclick:()=>mark("admin",`Report forwarded to administrator${adm.value.trim()?`: ${adm.value.trim()}`:""}.`)},"Mark done"))),
+    item(f.parent, "Parent or guardian notified (within one school day)", el("div",{class:"row",style:"flex:1 1 100%"}, how, el("button",{type:"button",class:"small",onclick:()=>mark("parent",`Parent or guardian notified${how.value.trim()?` by ${how.value.trim()}`:""}.`)},"Mark done"))),
+    e.bip==="No" ? item(f.iep, "No BIP: administrator schedules an IEP team meeting within two days to review the report", el("button",{type:"button",class:"small",onclick:()=>mark("iep","IEP team meeting scheduled.")},"Mark scheduled"))
+                 : el("p",{style:"margin:0;font-size:.85rem"},"If the student has a BIP and this was a new serious behavior, or the plan didn't work, the IEP team decides whether the plan needs changes."),
+    el("p",{style:"margin:0;font-size:.8rem;color:var(--muted)"},"From California Education Code 56521.1. Your district may have its own form and timelines; follow those too."));
+}
+function dueFollowups(list){
+  const open=list.filter(e=>e.type==="emergency" && (!e.followups?.parent || !e.followups?.admin || (e.bip==="No" && !e.followups?.iep)));
+  if (!open.length) return null;
+  return el("div",{class:"todo",style:"margin-bottom:12px"}, el("b",{},"Emergency report follow-ups"),
+    ...open.map(e=>el("div",{class:"item"}, el("span",{},`${new Date(e.t).toLocaleDateString(undefined,{month:"short",day:"numeric"})}: ${followupLine(e).replace("To do: ","still to do: ")}`),
+      el("button",{type:"button",class:"small",onclick:()=>viewEntry(e)},"Open"))));
+}
+
+// ---------- summaries ----------
+function moreSummary(cur){
+  const out=[], by=(list,f)=>{ const m=new Map(); list.forEach(x=>{ const k=f(x); if(!m.has(k)) m.set(k,[]); m.get(k).push(x); }); return m; };
+  for (const [b,list] of by(cur.filter(e=>e.type==="count"), e=>e.behavior)){
+    const total=list.reduce((a,e)=>a+e.count,0), hrs=list.reduce((a,e)=>a+(e.end-e.t),0)/36e5;
+    out.push(`"${b}" was counted in ${list.length} session${list.length===1?"":"s"}: ${total} time${total===1?"":"s"} in all`+(hrs>=0.05?`, about ${Math.round(total/hrs*10)/10} per hour of observation.`:"."));
+  }
+  for (const [b,list] of by(cur.filter(e=>e.type==="duration"), e=>e.behavior)){
+    const sec=list.map(e=>e.seconds), avg=sec.reduce((a,x)=>a+x,0)/sec.length;
+    out.push(`"${b}" was timed ${list.length} time${list.length===1?"":"s"}, averaging ${fmtMins(avg*1000)} (longest ${fmtMins(Math.max(...sec)*1000)}).`);
+  }
+  for (const [b,list] of by(cur.filter(e=>e.type==="interval"), e=>e.behavior+"|"+e.method)){
+    const s=list.slice().sort((a,b)=>a.t-b.t), avg=Math.round(s.reduce((a,e)=>a+e.pct,0)/s.length);
+    out.push(`"${s[0].behavior}" (${METHOD[s[0].method].toLowerCase()}): ${s.length} session${s.length===1?"":"s"}, occurring in ${avg}% of intervals on average`+(s.length>1?`, from ${s[0].pct}% to ${s[s.length-1].pct}%.`:"."));
+  }
+  const care=cur.filter(e=>e.type==="care");
+  if (care.length){ const c=countBy(care,e=>e.care).map(([k,n])=>`${k.toLowerCase()} ${n}`).join(", "); let line=`Care log: ${c}.`;
+    const t=care.filter(e=>e.care==="Toileting" && e.detail), ok=t.filter(e=>/in toilet/.test(e.detail)).length;
+    if (t.length) line+=` ${ok} of ${t.length} toileting entries were in the toilet.`; out.push(line); }
+  const sz=cur.filter(e=>e.type==="seizure");
+  if (sz.length){ const timed=sz.filter(e=>e.seconds!=null), resc=sz.filter(e=>e.rescue).length;
+    out.push(`${sz.length} seizure${sz.length===1?" was":"s were"} logged`+(timed.length?`, the longest lasting ${fmtMins(Math.max(...timed.map(e=>e.seconds))*1000)}`:"")+`. Rescue medicine was given ${resc} time${resc===1?"":"s"}.`); }
+  const em=cur.filter(e=>e.type==="emergency");
+  if (em.length){ const mins=em.reduce((a,e)=>a+(e.minutes||0),0);
+    out.push(`${em.length} emergency intervention${em.length===1?" was":"s were"} documented, ${mins} minute${mins===1?"":"s"} in total. Each has its own report.`); }
+  return out;
+}
+
+// ---------- printable pages ----------
+// One self-contained HTML page: printed here when the browser allows, or saved as a file to open and print anywhere.
+// Written once with "S" standing for the page root: "body" in a saved file, "#print" when printing from the app.
+const PRINT_CSS = `S{font:14px/1.5 Lexend,system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2a2a;margin:0;padding:28px;max-width:760px;background:#fff}
+S h1{font-size:20px;margin:0 0 2px} S h2{font-size:15px;margin:22px 0 6px;padding-top:12px;border-top:1px solid #ccd5cf} S .sub{color:#5b6766;margin:0 0 10px}
+S table{border-collapse:collapse;width:100%;margin:6px 0} S td,S th{border:1px solid #ccd5cf;padding:5px 8px;text-align:left;vertical-align:top;font-size:13px} S th{background:#eef2ee;font-weight:600}
+S .k{color:#5b6766;width:38%} S .box{border:1px solid #9aa6a4;border-radius:6px;min-height:58px;padding:6px 8px;margin-top:6px} S .marks span{margin-right:18px;white-space:nowrap}
+S .sig{display:flex;gap:24px;margin-top:26px} S .sig div{flex:1;border-top:1px solid #333;padding-top:4px;font-size:12px;color:#444} S svg{display:block;width:100%;height:auto;max-width:700px}
+S .foot{margin-top:24px;font-size:11.5px;color:#5b6766} S .goal{break-inside:avoid}`;
+const printCSS = root => PRINT_CSS.replace(/(^|[\s,}])S(?=[\s{.,])/g, (m,a)=>a+root);
+function pageHTML(title, body){ return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${printCSS("body")}@media print{body{padding:0}}</style></head><body>${body}</body></html>`; }
+// Inside the Claude viewer printing is blocked, so the page is saved as a file instead; anywhere else it prints directly.
+function printOrSave(html, filename){
+  if (window.claude){ saveFile(filename || "bridgelog-report.html", html, "text/html").then(ok=>ok&&toast("Saved. Open the file to print it.")); return; }
+  const body = html.slice(html.indexOf("<body>")+6, html.lastIndexOf("</body>"));
+  const pr=$("#print"); pr.innerHTML = `<style>@media print{${printCSS("#print")}}</style>${body}`;
+  addEventListener("afterprint", ()=>pr.replaceChildren(), {once:true});
+  try{ window.print(); }catch(e){ saveFile(filename || "bridgelog-report.html", html, "text/html"); }
+}
+function goalChart(list, from, to, target){
+  const W=700,H=150,P={l:34,r:12,t:10,b:22}, x=t=>P.l+(W-P.l-P.r)*Math.max(0,Math.min(1,(t-from)/(to-from))), y=v=>P.t+(H-P.t-P.b)*(1-v/100);
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scores over time">`;
+  [0,50,100].forEach(v=>{ g+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(v)}" y2="${y(v)}" stroke="#dde4de"/><text x="${P.l-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#6b7877">${v}%</text>`; });
+  if (target!=null) g+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(target)}" y2="${y(target)}" stroke="#4f8a63" stroke-dasharray="5 4"/><text x="${W-P.r}" y="${y(target)-4}" text-anchor="end" font-size="11" fill="#4f8a63">target ${target}%</text>`;
+  const days=new Map(); list.forEach(e=>{ const k=dayKey(e.t); if(!days.has(k)) days.set(k,[]); days.get(k).push(e.score); });   // one point per day (the day's average)
+  const pts=[...days].map(([k,v])=>[x(new Date(k+"T12:00").getTime()), y(v.reduce((a,c)=>a+c,0)/v.length)]);
+  if (pts.length>1) g+=`<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="#4f7fa6" stroke-width="2.2"/>`;
+  pts.forEach(p=>{ g+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.6" fill="#4f7fa6"/>`; });
+  const d=t=>new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  g+=`<text x="${P.l}" y="${H-5}" font-size="11" fill="#6b7877">${d(from)}</text><text x="${W-P.r}" y="${H-5}" text-anchor="end" font-size="11" fill="#6b7877">${d(to-1)}</text></svg>`;
+  return g;
+}
+function slopePerWeek(list){ if (list.length<3) return null; const xs=list.map(e=>e.t/6048e5), ys=list.map(e=>e.score), mx=xs.reduce((a,b)=>a+b)/xs.length, my=ys.reduce((a,b)=>a+b)/ys.length;
+  const num=xs.reduce((a,x,i)=>a+(x-mx)*(ys[i]-my),0), den=xs.reduce((a,x)=>a+(x-mx)**2,0); return den? num/den : null; }
+function progressHTML(s, entries, from, to){
+  const cur=inRange(entries, from, to), D=t=>new Date(t).toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"});
+  const goals=cur.filter(e=>e.type==="goal"), names=[...new Set([...(s.goals||[]), ...goals.map(g=>g.goal)])];
+  let b=`<h1>IEP goal progress: ${esc(s.name)}</h1><p class="sub">${D(from)} to ${D(to-1)} · prepared ${D(Date.now())}${getMeta().me?` by ${esc(getMeta().me)}`:""}</p>`;
+  for (const n of names){
+    const list=goals.filter(g=>g.goal===n).sort((a,c)=>a.t-c.t);
+    const tm=n.match(/(\d{1,3})\s*%/), target=tm?Math.min(100,+tm[1]):null;
+    b+=`<div class="goal"><h2>${esc(n)}</h2>`;
+    if (!list.length){ b+=`<p>No data was logged for this goal in this period.</p>`; }
+    else {
+      const avg=Math.round(list.reduce((a,e)=>a+e.score,0)/list.length), first=list[0].score, last=list[list.length-1].score, last3=list.slice(-3), l3=Math.round(last3.reduce((a,e)=>a+e.score,0)/last3.length);
+      const sl=slopePerWeek(list), trend = sl==null ? "" : sl>=2 ? ` Scores rose by about ${Math.round(sl)} points a week.` : sl<=-2 ? ` Scores fell by about ${Math.round(-sl)} points a week.` : " Scores held about steady.";
+      let sentence=`Across ${list.length} data point${list.length===1?"":"s"} from ${new Date(list[0].t).toLocaleDateString(undefined,{month:"short",day:"numeric"})} to ${new Date(list[list.length-1].t).toLocaleDateString(undefined,{month:"short",day:"numeric"})}, scores ${list.length>1?`went from ${first}% to ${last}%`:`were ${last}%`} (average ${avg}%).${trend}`;
+      if (target!=null && list.length>=3) sentence+=` The goal's target is ${target}%; the last ${last3.length} scores averaged ${l3}%.`;
+      const tr=list.flatMap(e=>e.trials||[]).concat(list.flatMap(e=>(e.steps||[]).map(x=>x.l).filter(Boolean)));
+      if (tr.length){ const half=a=>{ const ind=a.filter(x=>x==="I").length; return pct(ind,a.length); };
+        const early=list.slice(0,Math.ceil(list.length/2)).flatMap(e=>(e.trials||[]).concat((e.steps||[]).map(x=>x.l).filter(Boolean))), late=list.slice(Math.ceil(list.length/2)).flatMap(e=>(e.trials||[]).concat((e.steps||[]).map(x=>x.l).filter(Boolean)));
+        const top=countBy(tr.filter(x=>x!=="I"),x=>x)[0];
+        sentence+=` Independent responses: ${half(tr)}% overall`+(late.length&&early.length&&list.length>1?`, ${half(early)}% in the first half of the period and ${half(late)}% in the second`:"")+"."+(top?` The most common prompt needed was ${promptName(top[0]).toLowerCase()}.`:""); }
+      b+=`<p>${esc(sentence)}</p>${goalChart(list, from, to, target)}`;
+      const steps=list.filter(e=>e.steps?.length);
+      if (steps.length){ const L=steps[steps.length-1]; b+=`<table><tr><th>Step</th><th>Latest prompt level (${esc(new Date(L.t).toLocaleDateString(undefined,{month:"short",day:"numeric"}))})</th></tr>${L.steps.map(x=>`<tr><td>${esc(x.s)}</td><td>${esc(x.l?promptName(x.l):"Not scored")}</td></tr>`).join("")}</table>`; }
+    }
+    b+=`<p class="marks"><span>☐ Met</span><span>☐ Making progress</span><span>☐ Not yet making progress</span><span>☐ Not yet introduced</span></p><div class="box" contenteditable="true" aria-label="Comments"></div></div>`;
+  }
+  const extra=moreSummary(cur), inc=cur.filter(e=>e.type==="incident"), wins=cur.filter(e=>e.type==="win");
+  if (extra.length || inc.length || wins.length){
+    b+=`<div class="goal"><h2>Behavior data</h2>`;
+    if (inc.length || wins.length){
+      const weeks=[]; for (let w=from; w<to; w+=6048e5) weeks.push([w, Math.min(to, w+6048e5)]);
+      b+=`<table><tr><th>Week of</th><th>Tough moments</th><th>Wins</th></tr>${weeks.map(([a,c])=>`<tr><td>${new Date(a).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</td><td>${inRange(inc,a,c).length}</td><td>${inRange(wins,a,c).length}</td></tr>`).join("")}</table>`;
+    }
+    b+=extra.map(x=>`<p>${esc(x)}</p>`).join("")+`</div>`;
+  }
+  b+=`<p class="foot">Prepared from BridgeLog records kept on a school device. Figures reflect what was logged: a day with no entries is a gap in logging, not necessarily in behavior. Progress markings and comments are made by the case manager.</p>`;
+  return pageHTML(`IEP progress, ${s.name}`, b);
+}
+function berHTML(e){
+  const s=db.students.find(x=>x.id===e.student)||{name:""}, f=e.followups||{};
+  const row=(k,v)=>`<tr><td class="k">${esc(k)}</td><td>${esc(v||"")}</td></tr>`;
+  let b=`<h1>Behavioral emergency report</h1><p class="sub">Student: ${esc(s.name)} · recorded in BridgeLog${e.by?` by ${esc(e.by)}`:""}, entered ${esc(fmtDT(e.c||e.t))}</p><table>`;
+  BER_FIELDS.forEach(([k,label])=>{ b+=row(label, k==="interventions"?(e.interventions||[]).join(", "):k==="t"?fmtDT(e.t):k==="minutes"?(e.minutes!=null?`${e.minutes} min`:""):e[k]); });
+  b+=`</table><h2>Follow-up</h2><table>${row("Forwarded to administrator", f.admin?fmtDT(f.admin.t):"")}${row("Parent or guardian notified", f.parent?fmtDT(f.parent.t):"")}${e.bip==="No"?row("IEP team meeting scheduled", f.iep?fmtDT(f.iep.t):""):""}</table>`;
+  if ((e.addenda||[]).length) b+=`<h2>Added notes</h2><table>${e.addenda.map(a=>row(fmtDT(a.t)+(a.by?` · ${a.by}`:""), a.text)).join("")}</table>`;
+  b+=`<div class="sig"><div>Staff signature and date</div><div>Administrator signature and date</div></div><div class="sig"><div>Parent or guardian signature and date</div></div>
+  <p class="foot">California Education Code 56521.1 requires a behavioral emergency report to be completed immediately, kept in the student's file and forwarded to a designated administrator, with the parent or guardian notified within one school day. Use your district's official form if it requires one; this page lists what BridgeLog recorded.</p>`;
+  return pageHTML(`Behavioral emergency report, ${s.name}`, b);
 }
 
 // ---------------- wiring ----------------
@@ -953,10 +1511,11 @@ function render(){
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===tab)));
   Object.keys(views).forEach(k=>{ $("#v-"+k).hidden = k!==tab; });
   views[tab]();
+  renderRunning();
 }
 $("#student").addEventListener("change", e=>{ db.current=e.target.value; save(); render(); });
 $("#addStudentBtn").addEventListener("click", addStudent);
-document.querySelectorAll("[data-log]").forEach(b=>b.addEventListener("click",()=>({incident:logIncident,win:logWin,goal:logGoal,restore:()=>logRestore()})[b.dataset.log]()));
+document.querySelectorAll("[data-log]").forEach(b=>b.addEventListener("click",()=>({incident:logIncident,win:logWin,goal:logGoal,restore:()=>logRestore(),time:openTimers,care:openSupports})[b.dataset.log]()));
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{ tab=b.dataset.tab; render(); }));
 const boot = load();
 if (boot && boot.enc){ render(); showLock(boot); }
