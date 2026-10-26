@@ -22,11 +22,11 @@
 /* Layout: phone-first app shell. Student bar on top, one view at a time, quick-log buttons always one tap away. */
 /* Calm, low-glare palette: soft sage ground, muted lavender-blue accent, clay (not alarm red) for incidents. */
 :root{
-  --bg:#f1f4f0; --surface:#fbfcf9; --ink:#2e3a3a; --muted:#6b7877; --line:#dde4de;
-  --accent:#5b6fa8; --accent-ink:#fbfcf9; --accent-soft:#e6e9f4;
-  --incident:#b06a4f; --incident-soft:#f4e6de; --win:#4f8a63; --win-soft:#e3efe4;
-  --goal:#4f7fa6; --goal-soft:#e2ecf3; --restore:#8a6fa8; --restore-soft:#eee7f4;
-  --care:#3f7f7a; --care-soft:#dcefec;
+  --bg:#f1f4f0; --surface:#fbfcf9; --ink:#2e3a3a; --muted:#64706f; --line:#dde4de;
+  --accent:#53669c; --accent-ink:#fbfcf9; --accent-soft:#e6e9f4;
+  --incident:#925842; --incident-soft:#f4e6de; --win:#427353; --win-soft:#e3efe4;
+  --goal:#436c8e; --goal-soft:#e2ecf3; --restore:#775b96; --restore-soft:#eee7f4;
+  --care:#38716d; --care-soft:#dcefec;
   --font:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"Lexend",system-ui,sans-serif;
   --r:16px;
@@ -151,7 +151,7 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:.84rem;font-weight:
 .day-tile{border-radius:14px;min-height:58px;padding:6px 8px;display:flex;flex-direction:column;justify-content:space-between;background:var(--bg);border:1.5px solid transparent}
 .day-tile.good{background:var(--win-soft)} .day-tile.hard{background:var(--incident-soft)} .day-tile.even{background:var(--accent-soft)}
 .day-tile.future{opacity:.35} .day-tile.today{border-color:var(--accent)}
-.dnum{font-size:.78rem;color:var(--muted)}
+.dnum{font-size:.78rem;color:var(--ink)}
 .counts{display:flex;gap:6px;flex-wrap:wrap;font-size:.85rem;font-variant-numeric:tabular-nums}
 .growth{display:flex;flex-direction:column;gap:5px}
 .growth .lab{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
