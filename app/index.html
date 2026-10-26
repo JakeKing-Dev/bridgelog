@@ -455,14 +455,32 @@ function logWin(){
     db.entries.push({id:uid(), student:s.id, type:"win", t:readTime(), skill:sk.dataset.value||"", what:what.value.trim()}); toast("Win logged");
   });
 }
+// Goal picker: the student's goals plus any typed one. A typed goal can be kept on the student's list.
+function goalPicker(s, id){
+  const logged = db.entries.filter(e=>e.student===s.id && e.type==="goal" && !e.steps).map(e=>e.goal);
+  const names = [...new Set([...(s.goals||[]), ...logged])].filter(Boolean);
+  const NEW="__new";
+  const sel = el("select",{id}, ...names.map(x=>el("option",{},x)), el("option",{value:NEW},"Another goal…"));
+  const txt = el("input",{id:id+"-new",placeholder:"Type the goal, e.g. Writes first name (4 of 5)",maxlength:"80"});
+  const keep = el("input",{type:"checkbox",id:id+"-keep",checked:"",style:"width:auto"});
+  const extra = el("div",{class:"stack",style:"gap:8px"}, txt, el("label",{style:"display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)"}, keep, `Add to ${s.name}'s goals`));
+  const sync=()=>{ const isNew = !names.length || sel.value===NEW; extra.hidden=!isNew; sel.hidden=!names.length; if (isNew && document.activeElement===sel) setTimeout(()=>txt.focus(),0); };
+  sel.addEventListener("change", sync); sync();
+  return {node: el("div",{class:"stack",style:"gap:8px"}, sel, extra),
+    read(){ if (names.length && sel.value!==NEW) return sel.value;
+      const g=txt.value.trim(); if (!g){ toast("Type the goal first."); txt.focus(); return null; }
+      if (keep.checked && !(s.goals||[]).includes(g)) (s.goals ||= []).push(g);
+      return g; }};
+}
 function logGoal(){
   if (needStudent()) return; const s=stu();
-  const g = el("select",{id:"f-goal"}, ...(s.goals.length? s.goals : ["General"]).map(x=>el("option",{},x)));
+  const g = goalPicker(s, "f-goal");
   const sc = el("input",{id:"f-score",type:"number",min:"0",max:"100",step:"1",inputmode:"numeric",placeholder:"e.g. 70",required:""});
   const n = el("input",{id:"f-gnote",placeholder:"Prompts, setting, number of trials"});
-  openForm(`Goal data · ${s.name}`,[field("Goal",g), el("div",{class:"row"}, field("Score (%)",sc), field("When",timeInput())), field("Note",n)], ()=>{
+  openForm(`Goal data · ${s.name}`,[field("Goal",g.node), el("div",{class:"row"}, field("Score (%)",sc), field("When",timeInput())), field("Note",n)], ()=>{
     const v = +sc.value; if (sc.value==="" || v<0 || v>100){ toast("Enter a score from 0 to 100."); return false; }
-    db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal:g.value, score:v, notes:n.value.trim()}); toast("Goal data saved");
+    const goal=g.read(); if (!goal) return false;
+    db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal, score:v, notes:n.value.trim()}); toast("Goal data saved");
   });
 }
 function logRestore(existing){
@@ -1363,17 +1381,17 @@ function setupBreak(s){
 
 // ---------- supports forms ----------
 function logTrials(s){
-  const g=el("select",{id:"tr-goal"}, ...(s.goals.length?s.goals:["General"]).map(x=>el("option",{},x)));
+  const g=goalPicker(s, "tr-goal");
   const trials=[], seq=el("div",{class:"seq","aria-live":"polite"}), stat=el("p",{style:"margin:0;color:var(--muted);font-size:.85rem"});
   const show=()=>{ seq.textContent = trials.length ? trials.join(" ") : "No trials yet"; const ind=trials.filter(x=>x==="I").length; stat.textContent = trials.length ? `${ind} of ${trials.length} independent (${pct(ind,trials.length)}%)` : "Tap the prompt level each trial needed."; };
   const pad=el("div",{class:"chips lvl"}, ...PROMPTS.map(([c,n])=>el("button",{type:"button",class:"chip",title:n,"aria-label":n,onclick:()=>{ trials.push(c); show(); }},c)));
   const n=el("input",{id:"tr-note",placeholder:"Setting, materials, anything to note"});
-  openForm(`Trials · ${s.name}`,[field("Goal",g), el("b",{},"Prompt level for each trial"), pad,
+  openForm(`Trials · ${s.name}`,[field("Goal",g.node), el("b",{},"Prompt level for each trial"), pad,
     el("p",{style:"margin:0;font-size:.78rem;color:var(--muted)"}, PROMPTS.map(([c,n])=>`${c} = ${n}`).join(" · ")), seq, stat,
     el("div",{class:"row"}, el("button",{type:"button",class:"small ghost",onclick:()=>{ trials.pop(); show(); }},"Undo last trial"), field("When",timeInput())), field("Note",n)], ()=>{
       if (!trials.length){ toast("Tap at least one trial."); return false; }
-      const ind=trials.filter(x=>x==="I").length;
-      db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal:g.value, score:pct(ind,trials.length), trials:trials.slice(), notes:n.value.trim()}); toast("Trials saved");
+      const ind=trials.filter(x=>x==="I").length, goal=g.read(); if (!goal) return false;
+      db.entries.push({id:uid(), student:s.id, type:"goal", t:readTime(), goal, score:pct(ind,trials.length), trials:trials.slice(), notes:n.value.trim()}); toast("Trials saved");
   });
   show();
 }
