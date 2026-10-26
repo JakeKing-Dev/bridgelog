@@ -367,7 +367,7 @@ function chipGroup(name, options, value){
 function openForm(title, body, onSave){
   form.replaceChildren(el("h2",{},title), ...body,
     el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Save")));
-  form.onsubmit = e => { e.preventDefault(); if (onSave()!==false){ const now=Date.now(); db.entries.forEach(x=>{ if(!x.c) x.c=now; }); dlg.close(); save(); render(); } };
+  form.onsubmit = e => { e.preventDefault(); if (onSave()!==false){ const now=Date.now(), me=getMeta().me||""; db.entries.forEach(x=>{ if(!x.c){ x.c=now; if(me) x.by=me; } }); dlg.close(); save(); render(); } };
   dlg.showModal(); const first = form.querySelector("input,textarea,select"); if (first) first.focus();
 }
 const field = (label, input) => el("label",{class:"f"}, label, input);
@@ -559,7 +559,7 @@ function vTimeline(){
     const notes = (e.addenda||[]).length;
     box.append(el("div",{class:"entry"+(e.voided?" voided":"")}, el("div",{class:"stripe",style:`background:${COLORS[e.type]}`}),
       el("div",{}, el("div",{class:"head"},head, e.voided?el("span",{class:"pill p-missed",style:"margin-left:8px"},"Voided"):null), sub?el("p",{},sub):null,
-        notes?el("p",{class:"t",style:"margin-top:4px"},`${notes} added note${notes>1?"s":""}`):null),
+        (notes || (e.by && e.by!==getMeta().me)) ? el("p",{class:"t",style:"margin-top:4px"}, [e.by && e.by!==getMeta().me ? `Logged by ${e.by}` : null, notes?`${notes} added note${notes>1?"s":""}`:null].filter(Boolean).join(" · ")) : null),
       el("div",{style:"display:flex;flex-direction:column;align-items:flex-end;gap:6px"}, el("span",{class:"t"},fmtTime(e.t)),
         el("button",{type:"button",class:"small ghost","aria-label":"View full entry",onclick:()=>viewEntry(e)},"View"))));
   }
@@ -569,6 +569,7 @@ function viewEntry(e){
   const add=(k,v)=>{ if(v!==undefined && v!==null && v!=="") rows.push(el("div",{class:"kv"}, el("span",{},k), el("b",{},String(v)))); };
   add("Happened", new Date(e.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}));
   add("Entered", new Date(e.c||e.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}));
+  add("Logged by", e.by);
   if (e.type==="incident"){ add("Behavior",e.behavior); add("Activity",e.activity); add("Before",e.antecedent); add("After",e.consequence); add("Intensity",["","Low","Moderate","High"][e.intensity||0]); add("Duration",e.duration?e.duration+" min":""); add("Notes",e.notes); }
   if (e.type==="win"){ add("Skill",e.skill); add("What happened",e.what); }
   if (e.type==="goal"){ add("Goal",e.goal); add("Score",e.score+"%"); add("Note",e.notes); }
@@ -577,7 +578,7 @@ function viewEntry(e){
   const banner = e.voided ? el("div",{class:"confirm"}, `Voided ${new Date(e.voided.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})}: ${e.voided.reason}. Kept for the record and left out of patterns and summaries.`)
     : el("p",{class:"note"}, locked ? "This entry is locked because the day it was entered has passed. You can add a dated note below, but the original can't be changed or removed."
                                      : "You can void this entry until the end of today if it was a mistake. After that it locks for good.");
-  const history = (e.addenda||[]).map(a=>el("div",{class:"addendum"}, el("span",{class:"t"},new Date(a.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})), el("p",{},a.text)));
+  const history = (e.addenda||[]).map(a=>el("div",{class:"addendum"}, el("span",{class:"t"},new Date(a.t).toLocaleString([], {dateStyle:"medium", timeStyle:"short"})+(a.by?` · ${a.by}`:"")), el("p",{},a.text)));
   const note = el("textarea",{id:"f-addendum",placeholder:"Add a dated note. The original entry stays exactly as it was."});
   const reason = el("input",{id:"f-void",placeholder:"Why? e.g. logged for the wrong student"});
   const voidArea = el("div",{class:"stack",hidden:""}, field("Reason for voiding (required)", reason),
@@ -590,7 +591,7 @@ function viewEntry(e){
       (!locked && !e.voided) ? el("button",{type:"button",class:"ghost",onclick:()=>{ voidArea.hidden=false; reason.focus(); }},"Void entry…") : null,
       el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Close"),
       el("button",{type:"button",class:"primary",onclick:()=>{ const t=note.value.trim(); if(!t){ toast("Write the note first."); return; }
-        (e.addenda ||= []).push({t:Date.now(), text:t}); save(); dlg.close(); render(); toast("Note added"); }},"Add note")));
+        (e.addenda ||= []).push({t:Date.now(), text:t, by:getMeta().me||""}); save(); dlg.close(); render(); toast("Note added"); }},"Add note")));
   form.onsubmit = ev => ev.preventDefault();
   dlg.showModal();
 }
@@ -683,11 +684,96 @@ function askPasscode(title, onOk){
 async function readBackupFile(file){
   const text = await file.text(); let d; try{ d = JSON.parse(text); }catch(e){ throw new Error("That file isn't a BridgeLog backup."); }
   if (d && d.enc){
-    return new Promise((resolve,reject)=>{ askPasscode("This backup is encrypted", async pass=>{
-      let key, out; try{ key = await deriveKey(pass, fromB64(d.salt)); out = await unseal(d, key); }catch(e){ throw new Error("That passcode didn't work for this backup."); }
+    return new Promise((resolve,reject)=>{ askPasscode("This file is encrypted", async pass=>{
+      let key, out; try{ key = await deriveKey(pass, fromB64(d.salt)); out = await unseal(d, key); }catch(e){ throw new Error("That passcode didn't work for this file."); }
       resolve({data:out, key, salt:d.salt}); }); dlg.addEventListener("close", ()=>reject(new Error("cancelled")), {once:true}); });
   }
   return {data:d};
+}
+// ---- files, sharing and removal
+async function saveFile(name, text, type){
+  const d = window.claude?.use ? await window.claude.use("downloads").catch(()=>null) : null;
+  if (d){ try{ await d.save({filename:name, data:text}); return true; }catch(e){ if (e?.code!=="declined") toast("Couldn't save the file here."); return false; } }
+  const a=el("a",{href:URL.createObjectURL(new Blob([text],{type})),download:name}); document.body.append(a); a.click(); a.remove(); return true;
+}
+function toCSV(entries){
+  const rows=[["student","type","date","time","entered","logged by","detail","activity","before","after","intensity","minutes","score","notes","added notes","voided"]];
+  entries.slice().sort((a,b)=>a.t-b.t).forEach(e=>{ const st=db.students.find(x=>x.id===e.student); const d=new Date(e.t);
+    rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.by||"",e.behavior||e.skill||e.goal||e.agreement||"",e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",e.notes||e.what||"",(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+(a.by?` (${a.by})`:"")+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):""]); });
+  return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+}
+// Merge never replaces what's here: originals stay as they are, new entries are added, notes and voids combine.
+function mergeIn(data){
+  const r={newEntries:0,newNotes:0,newStudents:0};
+  for (const st of data.students){
+    const mine = db.students.find(x=>x.id===st.id);
+    if (!mine){ db.students.push({...st}); r.newStudents++; }
+    else { mine.behaviors=[...new Set([...(mine.behaviors||[]),...(st.behaviors||[])])]; mine.goals=[...new Set([...(mine.goals||[]),...(st.goals||[])])]; }
+  }
+  for (const e of data.entries){
+    const mine = db.entries.find(x=>x.id===e.id);
+    if (!mine){ db.entries.push(JSON.parse(JSON.stringify(e))); r.newEntries++; continue; }
+    const have = new Set((mine.addenda||[]).map(a=>a.t+"|"+a.text));
+    for (const a of (e.addenda||[])) if (!have.has(a.t+"|"+a.text)){ (mine.addenda ||= []).push(a); r.newNotes++; }
+    if (mine.addenda) mine.addenda.sort((a,b)=>a.t-b.t);
+    if (e.voided && (!mine.voided || e.voided.t < mine.voided.t)) mine.voided = e.voided;
+    if (mine.type==="restore" && mine.status==="open" && e.status && e.status!=="open") mine.status = e.status;
+  }
+  if (!db.current && db.students.length) db.current = db.students[0].id;
+  return r;
+}
+function shareStudent(s){
+  const p1=el("input",{type:"password",id:"sh1",autocomplete:"new-password"}), p2=el("input",{type:"password",id:"sh2",autocomplete:"new-password"});
+  const msg=el("p",{role:"status",style:"margin:0;color:var(--incident);min-height:1.2em"});
+  form.replaceChildren(el("h2",{},`Share ${s.name}'s log`),
+    el("p",{class:"note"},"This makes an encrypted file with this student's entries. Send it the way your school sends student records, like school email or a school drive. Tell your teammate the share passcode in person or by phone, never in the same message as the file."),
+    field("Share passcode (6 or more characters)",p1), field("Type it again",p2), msg,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Make the file")));
+  form.onsubmit = async ev => { ev.preventDefault();
+    if (p1.value.length<6){ msg.textContent="Use at least 6 characters."; return; }
+    if (p1.value!==p2.value){ msg.textContent="The two passcodes don't match."; return; }
+    msg.textContent="Encrypting…";
+    const salt = crypto.getRandomValues(new Uint8Array(16)), key = await deriveKey(p1.value, salt);
+    const payload = {kind:"share", from:getMeta().me||"", sharedAt:Date.now(), students:[s], entries:db.entries.filter(e=>e.student===s.id)};
+    const text = JSON.stringify(await seal(payload, key, toB64(salt)));
+    const safe = s.name.replace(/[^A-Za-z0-9]+/g,"") || "student";
+    if (await saveFile(`bridgelog-share-${safe}-${dayKey(Date.now())}.json`, text, "application/json")){ dlg.close(); toast("Share file saved. Send it, then give the passcode separately."); }
+  };
+  dlg.showModal(); p1.focus();
+}
+function archiveStudent(s){
+  const entries = db.entries.filter(e=>e.student===s.id);
+  const got = {csv:false, json:false};
+  const status = el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},"Not saved yet.");
+  const upd = () => { status.textContent = `Spreadsheet: ${got.csv?"saved":"not saved"} · BridgeLog file: ${got.json?"saved":"not saved"}`; };
+  const ack = el("input",{type:"checkbox",id:"arAck",style:"width:auto"});
+  const where = el("input",{id:"arWhere",placeholder:"e.g. given to case manager, school records drive"});
+  const typed = el("input",{id:"arName",placeholder:s.name,autocomplete:"off"});
+  const msg = el("p",{role:"status",style:"margin:0;color:var(--incident);min-height:1.2em"});
+  const safe = s.name.replace(/[^A-Za-z0-9]+/g,"") || "student";
+  form.replaceChildren(el("h2",{},`Archive and remove ${s.name}`),
+    el("p",{class:"note"},`Your school decides how long behavior records must be kept. Save the archive and put it where your school keeps student records before removing anything. This removes ${entries.length} entr${entries.length===1?"y":"ies"} for ${s.name} from this device only.`),
+    el("b",{},"1. Save the archive"),
+    el("div",{class:"row"},
+      el("button",{type:"button",onclick:async()=>{ if (await saveFile(`bridgelog-archive-${safe}-${dayKey(Date.now())}.csv`, toCSV(entries), "text/csv")){ got.csv=true; upd(); } }},"Spreadsheet (CSV)"),
+      el("button",{type:"button",onclick:async()=>{ const payload={kind:"archive", archivedAt:Date.now(), students:[s], entries};
+        const text = JSON.stringify(cryptoKey ? await seal(payload) : payload);
+        if (await saveFile(`bridgelog-archive-${safe}-${dayKey(Date.now())}.json`, text, "application/json")){ got.json=true; upd(); } }},"BridgeLog file")),
+    status,
+    el("b",{},"2. Confirm where it went"), field("Where the archive is kept", where),
+    el("label",{style:"display:flex;gap:10px;align-items:flex-start;font-size:.9rem"}, ack, "The archive is saved where my school keeps student records."),
+    el("b",{},"3. Type the student's name to confirm"), typed, msg,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},`Remove ${s.name}`)));
+  form.onsubmit = async ev => { ev.preventDefault();
+    if (!got.csv && !got.json){ msg.textContent="Save the archive first."; return; }
+    if (!ack.checked){ msg.textContent="Confirm the archive is where your school keeps student records."; return; }
+    if (typed.value.trim()!==s.name){ msg.textContent=`Type ${s.name} exactly to confirm.`; return; }
+    db.students = db.students.filter(x=>x.id!==s.id); db.entries = db.entries.filter(e=>e.student!==s.id);
+    if (db.current===s.id) db.current = db.students[0]?.id || null;
+    const m=getMeta(); setMeta({removals:[...(m.removals||[]), {t:Date.now(), name:s.name, entries:entries.length, note:where.value.trim()}]});
+    await save(); dlg.close(); render(); toast(`${s.name} removed from this device. The archive has the records.`);
+  };
+  dlg.showModal();
 }
 function vData(){
   const v=$("#v-data"); v.replaceChildren();
@@ -708,6 +794,7 @@ function vData(){
   imp.addEventListener("change", async ()=>{ const f=imp.files[0]; imp.value=""; if(!f) return;
     try{ const {data, key, salt} = await readBackupFile(f);
       if(!Array.isArray(data.students)||!Array.isArray(data.entries)) throw new Error("That file isn't a BridgeLog backup.");
+      if (data.kind==="share"||data.kind==="archive") throw new Error("That's a shared or archive file. Use \"Add a shared file\" so it merges in.");
       const {savedAt, ...rest} = data; db = rest; if (key && !cryptoKey){ cryptoKey=key; saltB64=salt; }   // stay encrypted if the backup was
       await save(); render(); toast("Backup restored"); }
     catch(e){ if (e.message!=="cancelled") toast(e.message); } });
@@ -727,6 +814,14 @@ function vData(){
         out.replaceChildren(el("div",{class:"check-bad"}, el("b",{},`${r.missing.length} missing and ${r.changedLocked.length} changed after locking, out of ${r.checked} records in the ${when} backup.`),
           ul, el("p",{style:"margin:6px 0 0;color:var(--muted)"},"The backup file still has the original records. Restoring it brings them back, but also removes anything entered since.")));
       } }
+    catch(e){ if (e.message!=="cancelled") toast(e.message); } });
+  const meInput = el("input",{id:"meInit",maxlength:"12",placeholder:"e.g. J.K.",value:meta.me||""});
+  meInput.addEventListener("change",()=>{ setMeta({me:meInput.value.trim()}); toast("Saved"); });
+  const shareIn = el("input",{type:"file",accept:"application/json,.json",id:"shareFile",style:"display:none"});
+  shareIn.addEventListener("change", async ()=>{ const f=shareIn.files[0]; shareIn.value=""; if(!f) return;
+    try{ const {data} = await readBackupFile(f); if(!Array.isArray(data.students)||!Array.isArray(data.entries)) throw new Error("That file isn't a BridgeLog file.");
+      const r = mergeIn(data); await save(); render();
+      toast(`Added ${r.newEntries} entr${r.newEntries===1?"y":"ies"}${r.newNotes?` and ${r.newNotes} note${r.newNotes===1?"":"s"}`:""}${data.from?` from ${data.from}`:""}.`); }
     catch(e){ if (e.message!=="cancelled") toast(e.message); } });
   const lastB = meta.lastBackup ? new Date(meta.lastBackup).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "never";
   const lockSel = el("select",{id:"lockMin","aria-label":"Lock after"}, ...[1,5,15,30].map(m=>el("option",{value:String(m)},`${m} minute${m>1?"s":""} without use`)));
@@ -753,7 +848,15 @@ function vData(){
     s? el("div",{class:"card stack"}, el("b",{},`${s.name}'s setup`),
       el("p",{style:"margin:0;color:var(--muted)"},`Target behaviors: ${s.behaviors.join(", ")||"none set"}`),
       el("p",{style:"margin:0;color:var(--muted)"},`Goals: ${s.goals.join("; ")||"none set"}`),
-      el("div",{class:"row"}, el("button",{type:"button",onclick:editStudent},"Edit behaviors and goals"))) : null,
+      el("div",{class:"row"}, el("button",{type:"button",onclick:editStudent},"Edit behaviors and goals"),
+        el("button",{type:"button",onclick:()=>shareStudent(s)},"Share with a teammate"),
+        el("button",{type:"button",class:"ghost",onclick:()=>archiveStudent(s)},"Archive and remove"))) : null,
+    el("div",{class:"card stack"}, el("b",{},"Working as a team"),
+      el("p",{style:"margin:0;color:var(--muted)"},"Share a student's log with your teacher or case manager as an encrypted file, sent the way your school already sends student records. Adding a shared file merges it in: nothing already here is replaced, and each entry shows who logged it."),
+      el("label",{class:"f"},"Your initials (shown on entries you share)", meInput),
+      el("div",{class:"row"}, el("button",{type:"button",onclick:()=>shareIn.click()},"Add a shared file")), shareIn),
+    (meta.removals||[]).length ? el("div",{class:"card stack"}, el("b",{},"Removal log"),
+      ...meta.removals.slice().reverse().map(r=>el("p",{style:"margin:0;color:var(--muted);font-size:.9rem"},`${new Date(r.t).toLocaleDateString(undefined,{dateStyle:"medium"})}: removed ${r.name} (${r.entries} entr${r.entries===1?"y":"ies"}) after archiving${r.note?` · ${r.note}`:""}`))) : null,
     el("div",{class:"card stack"}, el("b",{},"Try it with example data"),
       el("p",{style:"margin:0;color:var(--muted)"},"Adds a made-up student with four weeks of entries so you can see every view filled in. You can delete them afterwards."),
       el("div",{class:"row"}, db.students.some(x=>x.sample)
