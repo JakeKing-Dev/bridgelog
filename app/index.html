@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="description" content="Phone-first behavior log for special education: tough moments, wins, IEP goal data and restorative conversations on one timeline. Nothing leaves your device.">
 <meta name="theme-color" content="#5b6fa8">
 <link rel="manifest" href="manifest.webmanifest">
@@ -41,6 +43,7 @@
   --incident:#e0a48b; --incident-soft:#3d2f2a; --win:#97c9a4; --win-soft:#26362c;
   --goal:#96bddb; --goal-soft:#26333e; --restore:#c3acdf; --restore-soft:#332c3d; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:300 16.5px/1.6 var(--font);letter-spacing:.005em}
 .wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 96px}
@@ -128,6 +131,15 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:.84rem;font-weight:
 .gnote{font-size:.8rem;color:var(--muted)}
 @media (max-width:420px){.wk-label{font-size:.64rem}.day-tile{min-height:52px;padding:5px}.counts{font-size:.78rem;gap:3px}.mini{width:13px;height:13px}}
 .empty{text-align:center;color:var(--muted);padding:28px 12px}
+#lock{position:fixed;inset:0;background:var(--bg);z-index:40;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.lockcard{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;align-items:stretch;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:28px}
+.lockcard .logo{align-self:center}
+.lockcard h2{margin:0;font-size:1.3rem;font-weight:500}
+.status{display:flex;align-items:center;gap:8px;font-weight:500}
+.status i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.check-ok{background:var(--win-soft);border-radius:14px;padding:12px 14px;color:var(--ink)}
+.check-bad{background:var(--incident-soft);border-radius:14px;padding:12px 14px;color:var(--ink)}
+.check-bad ul{margin:6px 0 0;padding-left:18px}
 .kv{display:grid;grid-template-columns:minmax(90px,34%) minmax(0,1fr);gap:10px;font-size:.92rem;padding:6px 0;border-bottom:1px solid var(--line)}
 .kv span{color:var(--muted)} .kv b{font-weight:400;overflow-wrap:anywhere}
 .addendum{border-left:3px solid var(--accent);padding:2px 0 2px 12px} .addendum p{margin:2px 0 0}
@@ -182,6 +194,19 @@ dialog h2{margin:0;font-size:1.2rem}
 </div>
 
 <dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+<div id="lock" hidden>
+  <form id="lockForm" class="lockcard" autocomplete="off">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true" style="width:44px;height:44px"><path d="M2.5 15h19"/><path d="M4 15C6.5 7.5 17.5 7.5 20 15"/><path d="M8.5 15v-4.4M12 15V9.4M15.5 15v-4.4"/><path d="M6 15v5M18 15v5"/></svg>
+    <h2>BridgeLog is locked</h2>
+    <p style="margin:0;color:var(--muted)">Enter your passcode to open your logs.</p>
+    <label class="f" for="lockPass">Passcode<input id="lockPass" type="password" autocomplete="current-password" required></label>
+    <button class="primary" type="submit">Unlock</button>
+    <p id="lockMsg" role="status" style="margin:0;min-height:1.4em;color:var(--incident)"></p>
+    <button type="button" class="ghost small" id="lockForgot">Forgot passcode?</button>
+    <div id="lockConfirm" class="confirm" hidden>The data is encrypted with your passcode, so it can't be recovered without it. You can erase this device and restore an older backup instead.
+      <button type="button" class="small" id="lockErase">Erase this device</button><button type="button" class="small ghost" id="lockKeep">Keep trying</button></div>
+  </form>
+</div>
 
 <script>
 // ---------------- vocab ----------------
@@ -198,8 +223,59 @@ const RQ = ["What happened?","What were you thinking at the time?","Who has been
 // ---------------- storage ----------------
 const KEY = "bridgelog.v1";
 let db = {students:[], entries:[], current:null, sample:false};
-function load(){ try{ const s = localStorage.getItem(KEY); if (s) db = JSON.parse(s); }catch(e){} }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ toast("Couldn't save on this device. Export a backup from the Data tab."); } }
+const META = "bridgelog.meta";
+let cryptoKey = null, saltB64 = null, locked = false, saveChain = Promise.resolve();
+function getMeta(){ try{ return JSON.parse(localStorage.getItem(META)||"{}"); }catch(e){ return {}; } }
+function setMeta(patch){ try{ localStorage.setItem(META, JSON.stringify({...getMeta(), ...patch})); }catch(e){} }
+const toB64 = buf => { const b=new Uint8Array(buf); let s=""; for (let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null, b.subarray(i,i+0x8000)); return btoa(s); };
+const fromB64 = str => Uint8Array.from(atob(str), c=>c.charCodeAt(0));
+async function deriveKey(pass, salt){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:210000, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+}
+async function seal(obj, key=cryptoKey, salt=saltB64){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, new TextEncoder().encode(JSON.stringify(obj)));
+  return {bridgelog:1, enc:"AES-GCM-256", kdf:"PBKDF2-SHA256-210000", salt, iv:toB64(iv), data:toB64(ct)};
+}
+async function unseal(env, key){ const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:fromB64(env.iv)}, key, fromB64(env.data)); return JSON.parse(new TextDecoder().decode(pt)); }
+// Returns "empty", "plain", or the encrypted envelope (which needs the passcode).
+function load(){ try{ const s=localStorage.getItem(KEY); if(!s) return "empty"; const o=JSON.parse(s); if (o && o.enc) return o; db=o; return "plain"; }catch(e){ return "empty"; } }
+function save(){
+  if (locked) return saveChain;           // never overwrite stored data while the app is locked
+  const snapshot = db, key = cryptoKey, salt = saltB64;
+  saveChain = saveChain.then(async ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(key ? await seal(snapshot, key, salt) : snapshot)); }
+    catch(e){ toast("Couldn't save on this device. Download a backup from the Data tab."); } });
+  return saveChain;
+}
+// ---- passcode lock
+let lastActive = Date.now();
+["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{ lastActive=Date.now(); }, {passive:true}));
+const lockMinutes = () => getMeta().lockMinutes || 5;
+setInterval(()=>{ if (cryptoKey && !locked && Date.now()-lastActive > lockMinutes()*60e3) lockNow(); }, 20e3);
+document.addEventListener("visibilitychange",()=>{ if (document.visibilityState==="visible" && cryptoKey && !locked && Date.now()-lastActive > lockMinutes()*60e3) lockNow(); });
+async function lockNow(){
+  await saveChain;
+  let env; try{ env = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+  if (!env || !env.enc) return;
+  if (dlg.open) dlg.close();
+  locked = true; cryptoKey = null; db = {students:[], entries:[], current:null};
+  document.querySelectorAll("section.view").forEach(sec=>sec.replaceChildren());   // drop every rendered record, not just the visible tab
+  render(); showLock(env);
+}
+function showLock(env){
+  locked = true;
+  const box = $("#lock"); box.hidden = false;
+  const inp = $("#lockPass"), msg = $("#lockMsg"); inp.value=""; msg.textContent=""; setTimeout(()=>inp.focus(), 50);
+  $("#lockForm").onsubmit = async e => { e.preventDefault(); msg.textContent="Unlocking…";
+    try{ const key = await deriveKey(inp.value, fromB64(env.salt)); const d = await unseal(env, key);
+      cryptoKey=key; saltB64=env.salt; db=d; locked=false; lastActive=Date.now(); box.hidden=true; inp.value=""; render(); }
+    catch(err){ msg.textContent="That passcode didn't work. Try again."; inp.select(); } };
+  $("#lockForgot").onclick = () => { const c=$("#lockConfirm"); c.hidden=false; };
+  $("#lockErase").onclick = () => { try{ localStorage.removeItem(KEY); }catch(e){} cryptoKey=null; saltB64=null; locked=false; db={students:[],entries:[],current:null};
+    $("#lockConfirm").hidden=true; box.hidden=true; render(); toast("Erased. You can restore a backup from the Data tab."); };
+  $("#lockKeep").onclick = () => { $("#lockConfirm").hidden=true; };
+}
 const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
 
 // ---------------- helpers ----------------
@@ -445,6 +521,11 @@ function goalGrowth(entries){
 function vTimeline(){
   const v=$("#v-timeline"); v.replaceChildren();
   const all = mine(); if (!stu()){ v.append(emptyState()); return; }
+  const real = db.students.some(x=>!x.sample) && db.entries.some(e=>{ const st=db.students.find(x=>x.id===e.student); return st && !st.sample; });
+  const lb = getMeta().lastBackup, ago = lb ? Math.floor((Date.now()-lb)/864e5) : null;
+  if (real && (lb==null || ago>=7)) v.append(el("div",{class:"note",style:"margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"},
+    lb==null ? "You haven't backed up yet. If this browser's data is ever cleared, the logs go with it." : `Last backup was ${ago} days ago.`,
+    el("button",{type:"button",class:"small",onclick:()=>{ tab="data"; render(); }},"Back up now")));
   const now=Date.now(), wk=7*864e5, w1=inRange(all,now-wk,now+1), w0=inRange(all,now-2*wk,now-wk);
   const k=(label,cur,prev,good)=>{ const d=cur-prev; const sign=d>0?"+":""; const better = good? d>=0 : d<=0;
     return el("div",{class:"kpi"}, el("b",{},String(cur)), el("span",{},label), el("div",{class:"delta",style:`color:var(${d===0?"--muted":better?"--win":"--incident"})`}, `${sign}${d} vs last week`)); };
@@ -560,30 +641,106 @@ function vSummary(){
     el("p",{class:"note",style:"margin-top:10px"},"Read it over before sharing. It describes what was logged, so a gap in logging looks like a gap in behavior."));
   go();
 }
+// Same fingerprint for an entry whether or not later, allowed changes were made (notes, voiding, kept/not kept).
+async function fingerprint(e){
+  const {addenda, voided, status, ...orig} = e;
+  const canon = JSON.stringify(Object.keys(orig).sort().reduce((o,k)=>(o[k]=orig[k],o),{}));
+  return toB64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canon)));
+}
+// BugNet's rule: check the records against something the app doesn't control, a backup file.
+async function recordCheck(backup){
+  const at = backup.savedAt || 0, cur = new Map(db.entries.map(e=>[e.id,e]));
+  const res = {checked:backup.entries.length, missing:[], changedLocked:[], changedSameDay:0, voidedSince:0, notesSince:0, newSince:0, at};
+  for (const b of backup.entries){
+    const c = cur.get(b.id);
+    if (!c){ res.missing.push(b); continue; }
+    if (await fingerprint(c) !== await fingerprint(b)){
+      if (at && dayKey(b.c||b.t) < dayKey(at)) res.changedLocked.push(c); else res.changedSameDay++;
+    }
+    if (c.voided && !b.voided) res.voidedSince++;
+    if ((c.addenda||[]).length > (b.addenda||[]).length) res.notesSince++;
+  }
+  const ids = new Set(backup.entries.map(e=>e.id)); res.newSince = db.entries.filter(e=>!ids.has(e.id)).length;
+  return res;
+}
+function askPasscode(title, onOk){
+  const p = el("input",{type:"password",id:"ask-pass",autocomplete:"current-password"});
+  const msg = el("p",{role:"status",style:"margin:0;color:var(--incident);min-height:1.2em"});
+  form.replaceChildren(el("h2",{},title), field("Passcode", p), msg,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Continue")));
+  form.onsubmit = async e => { e.preventDefault(); msg.textContent="Checking…"; try{ await onOk(p.value); dlg.close(); }catch(err){ msg.textContent = err?.message || "That passcode didn't work."; } };
+  dlg.showModal(); p.focus();
+}
+async function readBackupFile(file){
+  const text = await file.text(); let d; try{ d = JSON.parse(text); }catch(e){ throw new Error("That file isn't a BridgeLog backup."); }
+  if (d && d.enc){
+    return new Promise((resolve,reject)=>{ askPasscode("This backup is encrypted", async pass=>{
+      let key, out; try{ key = await deriveKey(pass, fromB64(d.salt)); out = await unseal(d, key); }catch(e){ throw new Error("That passcode didn't work for this backup."); }
+      resolve({data:out, key, salt:d.salt}); }); dlg.addEventListener("close", ()=>reject(new Error("cancelled")), {once:true}); });
+  }
+  return {data:d};
+}
 function vData(){
   const v=$("#v-data"); v.replaceChildren();
-  const s=stu();
+  const s=stu(), meta=getMeta();
   // In the Claude viewer, files go through its save prompt; as a plain web page, a normal download.
   const dl = async (name, text, type) => {
     const d = window.claude?.use ? await window.claude.use("downloads").catch(()=>null) : null;
-    if (d){ try{ await d.save({filename:name, data:text}); toast("Saved"); }catch(e){ if (e?.code!=="declined") toast("Couldn't save the file here."); } return; }
-    const a=el("a",{href:URL.createObjectURL(new Blob([text],{type})),download:name}); document.body.append(a); a.click(); a.remove(); toast("Saved");
+    if (d){ try{ await d.save({filename:name, data:text}); toast("Saved"); return true; }catch(e){ if (e?.code!=="declined") toast("Couldn't save the file here."); return false; } }
+    const a=el("a",{href:URL.createObjectURL(new Blob([text],{type})),download:name}); document.body.append(a); a.click(); a.remove(); toast("Saved"); return true;
   };
+  const backup = async () => { const payload = {...db, savedAt:Date.now()}; const text = JSON.stringify(cryptoKey ? await seal(payload) : payload);
+    if (await dl(`bridgelog-backup-${dayKey(Date.now())}.json`, text, "application/json")){ setMeta({lastBackup:Date.now()}); vData(); } };
   const csv = () => { const rows=[["student","type","date","time","entered","detail","activity","before","after","intensity","minutes","score","notes","added notes","voided"]];
     db.entries.slice().sort((a,b)=>a.t-b.t).forEach(e=>{ const st=db.students.find(x=>x.id===e.student); const d=new Date(e.t);
       rows.push([st?.name||"",e.type,dayKey(e.t),d.toTimeString().slice(0,5),new Date(e.c||e.t).toLocaleString(),e.behavior||e.skill||e.goal||e.agreement||"",e.activity||"",e.antecedent||"",e.consequence||"",e.intensity||"",e.duration||"",e.score??"",e.notes||e.what||"",(e.addenda||[]).map(a=>new Date(a.t).toLocaleString()+": "+a.text).join(" | "),e.voided?("Voided: "+e.voided.reason):""]); });
     return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n"); };
-  const imp = el("input",{type:"file",accept:"application/json",id:"importFile",style:"display:none"});
-  imp.addEventListener("change",()=>{ const f=imp.files[0]; if(!f) return; const r=new FileReader();
-    r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!Array.isArray(d.students)||!Array.isArray(d.entries)) throw 0; db=d; save(); render(); toast("Backup restored"); }catch(e){ toast("That file isn't a BridgeLog backup."); } };
-    r.readAsText(f); });
+  const imp = el("input",{type:"file",accept:"application/json,.json",id:"importFile",style:"display:none"});
+  imp.addEventListener("change", async ()=>{ const f=imp.files[0]; imp.value=""; if(!f) return;
+    try{ const {data, key, salt} = await readBackupFile(f);
+      if(!Array.isArray(data.students)||!Array.isArray(data.entries)) throw new Error("That file isn't a BridgeLog backup.");
+      const {savedAt, ...rest} = data; db = rest; if (key && !cryptoKey){ cryptoKey=key; saltB64=salt; }   // stay encrypted if the backup was
+      await save(); render(); toast("Backup restored"); }
+    catch(e){ if (e.message!=="cancelled") toast(e.message); } });
+  const chk = el("input",{type:"file",accept:"application/json,.json",id:"checkFile",style:"display:none"});
+  const out = el("div",{id:"checkOut"});
+  chk.addEventListener("change", async ()=>{ const f=chk.files[0]; chk.value=""; if(!f) return;
+    try{ const {data} = await readBackupFile(f); if(!Array.isArray(data.entries)) throw new Error("That file isn't a BridgeLog backup.");
+      const r = await recordCheck(data); const when = r.at ? new Date(r.at).toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"}) : "that";
+      const extras = [r.newSince?`${r.newSince} new entr${r.newSince===1?"y":"ies"} since`:null, r.notesSince?`${r.notesSince} with notes added`:null, r.voidedSince?`${r.voidedSince} voided with a reason`:null, r.changedSameDay?`${r.changedSameDay} edited on the day they were entered`:null].filter(Boolean);
+      if (!r.missing.length && !r.changedLocked.length){
+        out.replaceChildren(el("div",{class:"check-ok"}, el("b",{},`All ${r.checked} records from the ${when} backup are still here and unchanged.`),
+          extras.length?el("p",{style:"margin:4px 0 0;color:var(--muted)"},`Since then: ${extras.join(", ")}. Those are all allowed changes.`):null));
+      } else {
+        const ul = el("ul");
+        r.missing.slice(0,8).forEach(e=>ul.append(el("li",{},`Missing: ${describe(e)[0]} (${new Date(e.t).toLocaleDateString()})`)));
+        r.changedLocked.slice(0,8).forEach(e=>ul.append(el("li",{},`Changed after it locked: ${describe(e)[0]} (${new Date(e.t).toLocaleDateString()})`)));
+        out.replaceChildren(el("div",{class:"check-bad"}, el("b",{},`${r.missing.length} missing and ${r.changedLocked.length} changed after locking, out of ${r.checked} records in the ${when} backup.`),
+          ul, el("p",{style:"margin:6px 0 0;color:var(--muted)"},"The backup file still has the original records. Restoring it brings them back, but also removes anything entered since.")));
+      } }
+    catch(e){ if (e.message!=="cancelled") toast(e.message); } });
+  const lastB = meta.lastBackup ? new Date(meta.lastBackup).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "never";
+  const lockSel = el("select",{id:"lockMin","aria-label":"Lock after"}, ...[1,5,15,30].map(m=>el("option",{value:String(m)},`${m} minute${m>1?"s":""} without use`)));
+  lockSel.value = String(lockMinutes()); lockSel.addEventListener("change",()=>{ setMeta({lockMinutes:+lockSel.value}); toast("Saved"); });
   v.append(el("div",{class:"stack"},
     el("div",{class:"card stack"}, el("b",{},"Your data stays here"),
       el("p",{style:"margin:0;color:var(--muted)"},"BridgeLog has no accounts and sends nothing over the internet. Everything is stored in this browser on this device. Back it up regularly and keep the file where your school stores student records."),
+      el("p",{style:"margin:0"},`Last backup: ${lastB}`),
       el("div",{class:"row"},
-        el("button",{type:"button",class:"primary",onclick:()=>dl(`bridgelog-backup-${dayKey(Date.now())}.json`, JSON.stringify(db), "application/json")},"Download backup"),
+        el("button",{type:"button",class:"primary",onclick:backup},"Download backup"),
         el("button",{type:"button",onclick:()=>imp.click()},"Restore a backup"),
-        el("button",{type:"button",onclick:()=>{ dl(`bridgelog-${dayKey(Date.now())}.csv`, csv(), "text/csv"); }},"Export to spreadsheet (CSV)")), imp),
+        el("button",{type:"button",onclick:()=>{ dl(`bridgelog-${dayKey(Date.now())}.csv`, csv(), "text/csv"); }},"Export to spreadsheet (CSV)")), imp,
+      el("p",{style:"margin:0;font-size:.82rem;color:var(--muted)"}, cryptoKey ? "Backups are encrypted with your passcode. The spreadsheet export is not, so store it carefully." : "The spreadsheet export and backups are readable files. Store them where your school keeps student records.")),
+    el("div",{class:"card stack"}, el("b",{},"Passcode protection"),
+      el("div",{class:"status"}, el("i",{style:`background:var(${cryptoKey?"--win":"--muted"})`}), cryptoKey ? "On: your logs are encrypted on this device" : "Off"),
+      el("p",{style:"margin:0;color:var(--muted)"}, cryptoKey ? "BridgeLog locks itself when it isn't used for a while. Anyone who picks up this device needs the passcode to read the logs."
+        : "Encrypts everything on this device and locks the app when it isn't in use. Useful on shared or school devices."),
+      cryptoKey ? el("label",{class:"f"},"Lock after", lockSel) : null,
+      el("div",{class:"row"}, cryptoKey ? el("button",{type:"button",onclick:()=>lockNow()},"Lock now") : el("button",{type:"button",class:"primary",onclick:setPasscode},"Turn on passcode"),
+        cryptoKey ? el("button",{type:"button",class:"ghost",onclick:removePasscode},"Turn off passcode") : null)),
+    el("div",{class:"card stack"}, el("b",{},"Record check"),
+      el("p",{style:"margin:0;color:var(--muted)"},"Choose a backup file and BridgeLog checks that every record in it is still on this device and hasn't been changed since it locked. Notes, voids with a reason and kept-or-not updates are allowed changes and are listed separately."),
+      el("div",{class:"row"}, el("button",{type:"button",onclick:()=>chk.click()},"Check records against a backup")), chk, out),
     s? el("div",{class:"card stack"}, el("b",{},`${s.name}'s setup`),
       el("p",{style:"margin:0;color:var(--muted)"},`Target behaviors: ${s.behaviors.join(", ")||"none set"}`),
       el("p",{style:"margin:0;color:var(--muted)"},`Goals: ${s.goals.join("; ")||"none set"}`),
@@ -592,6 +749,32 @@ function vData(){
       el("p",{style:"margin:0;color:var(--muted)"},"Adds a made-up student with four weeks of entries so you can see every view filled in. You can delete them afterwards."),
       el("div",{class:"row"}, el("button",{type:"button",onclick:()=>{ addSample(); render(); toast("Example student added"); }},"Add example student"),
         el("button",{type:"button",class:"ghost",onclick:askClear},"Delete everything")))));
+}
+function setPasscode(){
+  const p1 = el("input",{type:"password",id:"pc1",autocomplete:"new-password",minlength:"6",required:""});
+  const p2 = el("input",{type:"password",id:"pc2",autocomplete:"new-password",required:""});
+  const ack = el("input",{type:"checkbox",id:"pcAck",style:"width:auto"});
+  const msg = el("p",{role:"status",style:"margin:0;color:var(--incident);min-height:1.2em"});
+  form.replaceChildren(el("h2",{},"Turn on passcode protection"),
+    el("p",{class:"note"},"Everything on this device will be encrypted with this passcode. If it's forgotten, the data can't be recovered by anyone, including the people who made BridgeLog. Keep backups."),
+    field("Passcode (6 or more characters)", p1), field("Type it again", p2),
+    el("label",{style:"display:flex;gap:10px;align-items:flex-start;font-size:.9rem"}, ack, "I understand a forgotten passcode means the data can't be recovered."), msg,
+    el("div",{class:"actions"}, el("button",{type:"button",class:"ghost",onclick:()=>dlg.close()},"Cancel"), el("button",{type:"submit",class:"primary"},"Turn on")));
+  form.onsubmit = async e => { e.preventDefault();
+    if (p1.value.length<6){ msg.textContent="Use at least 6 characters."; return; }
+    if (p1.value!==p2.value){ msg.textContent="The two passcodes don't match."; return; }
+    if (!ack.checked){ msg.textContent="Tick the box to confirm you understand."; return; }
+    msg.textContent="Encrypting…"; const salt = crypto.getRandomValues(new Uint8Array(16));
+    cryptoKey = await deriveKey(p1.value, salt); saltB64 = toB64(salt); lastActive = Date.now();
+    await save(); dlg.close(); render(); toast("Passcode is on. Your logs are encrypted."); };
+  dlg.showModal(); p1.focus();
+}
+function removePasscode(){
+  askPasscode("Turn off passcode protection", async pass=>{
+    let env; try{ env = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+    try{ await unseal(env, await deriveKey(pass, fromB64(env.salt))); }catch(e){ throw new Error("That passcode didn't work."); }
+    cryptoKey=null; saltB64=null; await save(); render(); toast("Passcode is off. Logs are stored unencrypted on this device.");
+  });
 }
 function editStudent(){
   const s=stu(); const beh=el("input",{id:"e-beh",value:s.behaviors.join(", ")}); const goals=el("textarea",{id:"e-goals"}); goals.value=s.goals.join("\n");
@@ -659,9 +842,10 @@ $("#student").addEventListener("change", e=>{ db.current=e.target.value; save();
 $("#addStudentBtn").addEventListener("click", addStudent);
 document.querySelectorAll("[data-log]").forEach(b=>b.addEventListener("click",()=>({incident:logIncident,win:logWin,goal:logGoal,restore:()=>logRestore()})[b.dataset.log]()));
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{ tab=b.dataset.tab; render(); }));
-load();
-if (!db.students.length) addSample();   // open in a filled-in state so the first view shows what it does
-render();
+const boot = load();
+if (boot && boot.enc){ render(); showLock(boot); }
+else { if (!db.students.length && boot==="empty") addSample();   // first visit opens in a filled-in state
+  render(); }
 </script>
 
 </body>
